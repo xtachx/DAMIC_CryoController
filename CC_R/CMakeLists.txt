@@ -34,16 +34,23 @@ set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -I$ENV{ROOTSYS}/include -L$ENV{R
 
 set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.cpp
-   #${CMAKE_CURRENT_SOURCE_DIR}/CombinedExposure.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/LakeShoreHeater.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/Cryocooler.cpp
    #${CMAKE_CURRENT_SOURCE_DIR}/helpers.cpp
 )
 set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/LakeShoreHeater.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/Cryocooler.hpp
 )
 
 
 
 
-add_executable( DAMICMCtrl DAMICMTest.cpp )
-target_link_libraries( DAMICMCtrl ${SOURCE} ${HEADERS})
+#add_executable( DAMICMCtrl DAMICMTest.cpp )
+#target_link_libraries( DAMICMCtrl ${SOURCE} ${HEADERS})
+
+
+add_executable( DAMICRTest DAMICMRawTest.cpp )
+target_link_libraries( DAMICRTest ${SOURCE} ${HEADERS})
 #

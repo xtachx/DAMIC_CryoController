@@ -21,7 +21,11 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="CMakeLists.txt" />
+		<Unit filename="Cryocooler.cpp" />
+		<Unit filename="Cryocooler.hpp" />
 		<Unit filename="DAMICMTest.cpp" />
+		<Unit filename="LakeShoreHeater.cpp" />
+		<Unit filename="LakeShoreHeater.hpp" />
 		<Unit filename="SerialDeviceT.cpp" />
 		<Unit filename="SerialDeviceT.hpp" />
 		<Unit filename="UtilityFunctions.cpp" />

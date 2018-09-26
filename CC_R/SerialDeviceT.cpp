@@ -21,18 +21,17 @@
 
 
 
-SerialDevice::SerialDevice(std::string port, unsigned int baud_rate){
+SerialDevice::SerialDevice(std::string port){
     /* Open File Descriptor */
-    USB = open( "/dev/ttyUSB0", O_RDWR| O_NOCTTY );
+    USB = open( port.c_str(), O_RDWR| O_NOCTTY );
 
     /* Error Handling */
     if ( USB < 0 )
     {
-        std::cout << "Error " << errno << " opening " << "/dev/ttyUSB0" << ": " << strerror (errno) << std::endl;
+        std::cout << "Error " << errno << " opening " << port << ": " << strerror (errno) << std::endl;
     }
 
-    struct termios tty;
-    struct termios tty_old;
+
     memset (&tty, 0, sizeof(tty));
 
     /* Error Handling */
@@ -41,23 +40,17 @@ SerialDevice::SerialDevice(std::string port, unsigned int baud_rate){
         std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
     }
 
-    /* Save old tty parameters */
-    tty_old = tty;
+
 
     /* Set Baud Rate */
-    cfsetospeed (&tty, (speed_t)B4800);
-    cfsetispeed (&tty, (speed_t)B4800);
+    //cfsetospeed (&tty, (speed_t)B4800);
+    //cfsetispeed (&tty, (speed_t)B4800);
 
     /* Setting other Port Stuff */
-    tty.c_cflag     &=  ~PARENB;            // Make 8n1
-    tty.c_cflag     &=  ~CSTOPB;
-    tty.c_cflag     &=  ~CSIZE;
-    tty.c_cflag     |=  CS8;
-
-    //tty.c_oflag &= ONLRET;
-    //tty.c_oflag &= ~O_NONBLOCK;
-    //tty.c_iflag &= IGNBRK;
-    //tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+    //tty.c_cflag     &=  ~PARENB;            // Make 8n1
+    //tty.c_cflag     &=  ~CSTOPB;
+    //tty.c_cflag     &=  ~CSIZE;
+    //tty.c_cflag     |=  CS8;
 
 
     tty.c_cc[VMIN]   =  0;                  // read doesn't block
@@ -66,17 +59,14 @@ SerialDevice::SerialDevice(std::string port, unsigned int baud_rate){
 
     /* Make raw */
     cfmakeraw(&tty);
-    tty.c_cflag     &=  ~CRTSCTS;           // no flow control
+    //tty.c_cflag     &=  ~CRTSCTS;           // no flow control
 
     /* Flush Port, then applies attributes */
-    tcflush( USB, TCIFLUSH );
-
-
-
-    if ( tcsetattr ( USB, TCSANOW, &tty ) != 0)
-    {
-        std::cout << "Error " << errno << " from tcsetattr" << std::endl;
-    }
+    //tcflush( USB, TCIFLUSH );
+    //if ( tcsetattr ( USB, TCSANOW, &tty ) != 0)
+    //{
+    //    std::cout << "Error " << errno << " from tcsetattr" << std::endl;
+    //}
 
 }
 
@@ -90,18 +80,15 @@ SerialDevice::~SerialDevice()
 
 void SerialDevice::WriteString(std::string s)
 {
-    unsigned char cmd[] = "TC\r";
+
+    char scmd[s.size()];
+    s.copy(scmd, s.size());
 
 
-    int n_written = 0,
-        spot = 0;
-
-
-    n_written = write( USB, cmd, sizeof(cmd)-1  );
+    int n_written;
+    n_written = write( USB, scmd, sizeof(scmd)  );
 
     //printf ("Written bits: %d\n",n_written);
-
-
 }
 
 
@@ -116,7 +103,7 @@ std::string SerialDevice::ReadLine()
 
     /* Whole response*/
     char response[1024];
-    memset(response, '\0', sizeof response);
+    memset(response, '\0', sizeof(response));
 
     do
     {

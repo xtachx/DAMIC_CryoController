@@ -6,25 +6,24 @@
  * **************************************************************************************/
 
 
-#ifndef Serial_HPP_INCLUDED
-#define Serial_HPP_INCLUDED
+#ifndef Lakeshore_HPP_INCLUDED
+#define Lakeshore_HPP_INCLUDED
 
 
 /*Includes*/
 #include <iostream>
-#include <termios.h>
+#include "SerialDeviceT.hpp"
 
-class SerialDevice
-{
+class LakeShore : public SerialDevice {
 public:
-    SerialDevice(std::string );
-    ~SerialDevice();
-    void WriteString(std::string s);
-    std::string ReadLine();
+    LakeShore(std::string );
+    ~LakeShore();
+    void ReadPower();
+    void SetPowerLevel(float PW);
 
 
-    int USB;
-    struct termios tty;
+    float currentPW;
+    float setPW;
 
 };
 

@@ -6,25 +6,26 @@
  * **************************************************************************************/
 
 
-#ifndef Serial_HPP_INCLUDED
-#define Serial_HPP_INCLUDED
+#ifndef Cryocooler_HPP_INCLUDED
+#define Cryocooler_HPP_INCLUDED
 
 
 /*Includes*/
 #include <iostream>
-#include <termios.h>
+#include "SerialDeviceT.hpp"
 
-class SerialDevice
+class Cryocooler:public SerialDevice
 {
 public:
-    SerialDevice(std::string );
-    ~SerialDevice();
-    void WriteString(std::string s);
-    std::string ReadLine();
+    Cryocooler(std::string);
+    ~Cryocooler();
+
+    void GetTC();
+    void GetP();
 
 
-    int USB;
-    struct termios tty;
+    float TC;
+    float PCurrent,PMax,PMin;
 
 };
 

@@ -57,7 +57,7 @@ class CryoProtocol(LineReceiver):
     #this defines what to do, when you want to send a line.
     #it just sends the line ot the transport WITH delimiter "\r"
     def sendLine(self, line):
-        print "Transport Start, sending: ", line
+        #print "Transport Start, sending: ", line
         self.transport.write(line)
     
     #this defines what to do when transport gives some data which was received
@@ -89,19 +89,20 @@ class OutboundProtocol(NetstringReceiver):
     
     #this is what we do when we receive strings.
     def stringReceived(self, request):
+        self.processRequest(request)
         #check for the "." in te string
-        if '.' not in request:
-            self.transport.loseConnection("Bad Request")
-            return
+        #if '.' not in request:
+        #    self.transport.loseConnection("Bad Request")
+        #    return
         #separate the "." and the 2 parts and send it for processing
-        request_name , request_value = request.split('.', 1)
-        self.processRequest(request_name, request_value)
+        #request_name , request_value = request.split('.', 1)
+        #self.processRequest(request_name, request_value)
     
     #You might be wondering, why we are doing this redundant step. We could
     #have sent the request directly to the factory! Yes, we could. But
     #the work of the protocol is to RESPOND as well. 
-    def processRequest(self, request_name, request_value):
-        responseFromProcess = self.factory.processRequest(request_name, request_value)
+    def processRequest(self, request):
+        responseFromProcess = self.factory.processRequest(request)
         #if there is a response, send it to transport.
         if responseFromProcess is not None:
             self.sendString(responseFromProcess)
@@ -160,19 +161,23 @@ class OutboundFactory(protocol.ServerFactory):
         
         
         #Dictionary of handlers based on dispatcher output
-	self.WhichCallback = self._handlerTemperature
+        self.ExpectedCB = ""
+        self.ExpectingReply = False
+        self.msgLine = 0
         self.dispatchDictionary = {"TC": self._handlerTemperature, "PID": self._handlerPI}
         
         
         
         
         #####################
-        #reactor.callWhenRunning(self.GetDataFromNIcFP)
         #Looping calls. This is here so in future we can implement a safety
         #feature, where we can "poll" the hardware to tell it that we
         #are still talking and something didnt go wrong
         l = task.LoopingCall(self.PrintDataOnScreen)
         l.start(1.0)
+        r = task.LoopingCall(self.CurrentTemperature)
+        r.start(2.0)
+        
         #####################
     
     
@@ -199,67 +204,73 @@ class OutboundFactory(protocol.ServerFactory):
     #and launches handlers based on what kind of packet was received.
     def _dispatcherHelper(self, data):
         
-        _msgParts= data
-        
-        
-        #_messageIdent = binascii.hexlify(data[:1])
         D = defer.Deferred()
         
-        if _messageIdent not in self.dispatchDictionary.keys():
-            #Failure(Exception('Key Not Found'))
-            D.errback(False)
-        else: 
+        
+        if self.ExpectingReply==True:
+            _messageIdent=self.ExpectedCB
             self.dispatchDictionary[_messageIdent](data)
             D.callback(True)
-        
+            
+        else:
+            _messageIdent=""
+            D.errback(False)
+            
         return D
     
-    def signed(self, n):
-        return n if n < 0 else n - [i for i in (2**j if n/(2**(j-1)) else iter(()).next() for j in xrange(2**15-1))][-1]
-
+    
     #Handler for the temperature data.
     #Basically, just split the data and store the bytes.
     def _handlerTemperature(self, TCData):
-        self.TC = TCData
-    
+        #print "Temp handler called"
+        if self.msgLine==1:
+            self.TC = TCData
+            self.msgLine = 0
+            self.ExpectingReply=False
+            
+            #print self.TC
+        else:
+            self.msgLine+=1
+        
     def PrintDataOnScreen(self):
-        temp_string = "TC "+self.TC
+        temp_string = "Last TC "+self.TC+"Reply expected: "+self.ExpectingReply
         sys.stdout.flush() 
-        sys.stdout.write('\r' + temp_string)
+        sys.stdout.write('\n' + temp_string)
     
     def _handlerPI(self, PIdata):
         print PIdata
     
     #This probably handles the outbound protocol. What a mess,
     #this needs a rewrite.
-    def processRequest(self, request_name, request_value):
-        thunk = getattr(self, '%s' % (request_name,), None)
-
-        if thunk is None: # no such transform
-            return None
-
-        try:
-            return thunk(request_value)
-        except:
-            return None # transform failed
+    def processRequest(self, request):
         
-    def CurrentTemperatureAll(self, input_part_2):
-        return self.TCDataStorage
+        #RequestIdentifier - First 4 chars.
+        #First char C for CryoCooler
+        RDictionary = {"CTC": self.TC, "PID": self._handlerPI}
+        
+        
+        RequestID = request[:3]
+        print RequestID
+
+        if RequestID in RDictionary:
+            return RDictionary[RequestID]
+        #try:
+        #    return thunk(request_value)
+        #except:
+        #    return None # transform failed
+        
+    def CurrentTemperature(self):
+        self.ExpectingReply = True
+        self.ExpectedCB="TC"
+        self.SendToCryo("TC")
+        #return self.TC
     
-    def CurrentTemperature(self, input_part_2):
-        return self.TCDataStorage[int(input_part_2)]
     
-    def CurrentPressure(self, input_part_2):
-        SlowPData = "% 06.02f" % self.PressurePSI
-        return SlowPData
     
-    def SendToArduino(self, what):
-        toBeSent = binascii.unhexlify(what)
+    def SendToCryo(self, what):
+        toBeSent = what+"\r"
         reactor.callWhenRunning(self.Device.sendLine, toBeSent)
         
-    def ReadcFP(self, input_part_2):
-        return self.NIcFPTemperature
-
     
 reactor.listenTCP(44444, OutboundFactory(SerialPortAddress, reactor))
 reactor.run()
