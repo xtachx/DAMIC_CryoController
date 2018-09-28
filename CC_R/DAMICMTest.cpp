@@ -29,26 +29,9 @@
 #include <algorithm>
 #include <iomanip>
 #include <unistd.h>
+#include <mysqlx/xdevapi.h>
 
 
-/*Custom Headers*/
-#include "SerialDeviceT.hpp"
-
-
-float GetTCryo(SerialDevice **CCooler)
-{
-
-    SerialDevice* CryoCooler = *CCooler;
-
-
-    CryoCooler->WriteString("TC\r");
-    sleep(1);
-    CryoCooler->ReadLine();
-    std::string TempReading = CryoCooler->ReadLine();
-
-    return std::stof(TempReading);
-
-}
 
 
 int main( int argc, char** argv )
@@ -76,6 +59,7 @@ int main( int argc, char** argv )
     CryoCooler->WriteString("TC\r");
     CryoCooler->WriteString("TC\r");
     sleep(1);
+    CryoCooler->ReadLine();
     CryoCooler->ReadLine();
     CryoCooler->ReadLine();
     sleep(1);

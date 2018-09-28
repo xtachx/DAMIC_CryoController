@@ -20,6 +20,9 @@
 #include "SerialDeviceT.hpp"
 #include "LakeShoreHeater.hpp"
 
+#include <mysqlx/xdevapi.h>
+
+
 
 LakeShore::LakeShore(std::string SerialPort) : SerialDevice(SerialPort){
 
@@ -45,6 +48,9 @@ LakeShore::LakeShore(std::string SerialPort) : SerialDevice(SerialPort){
     }
 
 
+    this->WatchdogFuse = 1;
+    this->setPW = 0;
+
 }
 
 
@@ -62,12 +68,100 @@ void LakeShore::ReadPower()
 
 
     this->WriteString(LSCmd);
-    usleep(50);
     LSP_String = this->ReadLine();
 
-    this->currentPW = std::stof(LSP_String);
+    //std::cout<<this->currentPW<<"\n";
 
-    //printf ("Written bits: %d\n",n_written);
+    this->currentPW = std::stof(LSP_String);
+}
+
+void LakeShore::ReadMode()
+{
+    std::string LSP_String;
+    std::string LSCmd = "RANGE? 1\r\n";
+
+
+    this->WriteString(LSCmd);
+    LSP_String = this->ReadLine();
+
+    try {
+        this->currentMode = std::stof(LSP_String);
+    } catch (...) {
+        printf("Error reading current PW. Continuing... \n");
+    }
+}
+
+
+void LakeShore::TurnONOFF(int pwstate){
+
+    std::string LSCmd;
+
+    if (pwstate <3 && pwstate >=0) {
+        LSCmd = "RANGE 1,"+std::to_string(pwstate)+"\r\n";
+        /*Now we have to set the power again*/
+        this->SetPowerLevel(this->setPW);
+    } else {
+        LSCmd = "RANGE 1,0\r\n";
+    }
+
+    this->WriteString(LSCmd);
+
+}
+
+void LakeShore::SetPowerLevel(float newPowerLevel){
+
+    std::string LSCmd;
+    LSCmd = "MOUT 1,"+std::to_string(newPowerLevel)+"\r\n";
+
+    this->WriteString(LSCmd);
+
+    /*Finally update the memory of which power level was set*/
+    this->setPW = newPowerLevel;
+}
+
+
+
+void LakeShore::UpdateMysql(void){
+
+    int _cWatchdogFuse;
+
+    // Connect to server using a connection URL
+    mysqlx::Session DDroneSession("localhost", 33060, "DAMICDrone", "Modane00");
+    mysqlx::Schema DDb = DDroneSession.getSchema("DAMICDrone");
+
+    /*First lets get the control parameters*/
+    mysqlx::Table CtrlTable = DDb.getTable("ControlParameters");
+    mysqlx::RowResult ControlResult = CtrlTable.select("HeaterPW", "HeaterMode", "WatchdogFuse")
+      .bind("IDX", 1).execute();
+    /*The row with the result*/
+    mysqlx::Row CtrlRow = ControlResult.fetchOne();
+
+
+    this->setPW = CtrlRow[0];
+    this->setMode = CtrlRow[1];
+    this->_cWatchdogFuse = CtrlRow[2];
+
+
+
+    /*Now update the monitoring table*/
+
+    // Accessing an existing table
+    mysqlx::Table LSHStats = DDb.getTable("LSHState");
+
+    // Insert SQL Table data
+
+    mysqlx::Result LSHResult= LSHStats.insert("HeaterPW", "SetPW", "HeaterMode", "WatchdogState")
+           .values(this->currentPW, this->setPW, this->currentMode, WatchdogFuse).execute();
+
+    unsigned int warnings;
+    warnings=LSHResult.getWarningsCount();
+
+    if (warnings == 0) this->SQLStatusMsg = "OK";
+    else (SQLStatusMsg = "WARN!\n");
+
+
+    DDroneSession.close();
+
 }
 
 

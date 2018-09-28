@@ -108,6 +108,7 @@ std::string SerialDevice::ReadLine()
     do
     {
         n = read( USB, &buf, 1 );
+
         sprintf( &response[spot], "%c", buf );
         spot += n;
     }

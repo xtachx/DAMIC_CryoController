@@ -19,11 +19,23 @@ public:
     LakeShore(std::string );
     ~LakeShore();
     void ReadPower();
+    void ReadMode(void );
     void SetPowerLevel(float PW);
+    void TurnONOFF(int );
+    void UpdateMysql(void);
 
 
     float currentPW;
     float setPW;
+    int currentMode;
+    int setMode;
+    bool WatchdogFuse;
+    std::string SQLStatusMsg;
+
+
+
+    int _cHeaterMode, _cWatchdogFuse;
+
 
 };
 

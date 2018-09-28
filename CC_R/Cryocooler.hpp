@@ -20,12 +20,19 @@ public:
     Cryocooler(std::string);
     ~Cryocooler();
 
-    void GetTC();
-    void GetP();
+    void GetTC(void);
+    void GetP(void);
+    void GetE(void);
+    void checkIfON(void);
 
+    void UpdateMysql(void);
+    void AdjustCryoPower(void);
 
     float TC;
-    float PCurrent,PMax,PMin;
+    float PCurrent,PMax,PMin, PSet;
+    bool isON;
+
+    std::string SQLStatusMsg;
 
 };
 
