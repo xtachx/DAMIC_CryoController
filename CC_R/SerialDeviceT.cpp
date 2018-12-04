@@ -133,3 +133,44 @@ std::string SerialDevice::ReadLine()
 
 }
 
+std::string SerialDevice::ReadLineThrowR()
+{
+
+
+    int n = 0,
+        spot = 0;
+    char buf = '\0';
+    int i = 0;
+
+    /* Whole response*/
+    char response[1024];
+    memset(response, '\0', sizeof(response));
+
+    do
+    {
+        n = read( USB, &buf, 1 );
+        if (buf == '\r') continue;
+        sprintf( &response[spot], "%c", buf );
+        spot += n;
+    }
+    while( n > 0 && buf != '\r');
+
+    if (n < 0)
+    {
+        //std::cout << "Error reading: " << strerror(errno) << std::endl;
+        return "";
+    }
+    else if (n == 0)
+    {
+        //std::cout << "Read nothing!" << std::endl;
+        return "";
+    }
+    else
+    {
+        //std::cout << "Response: " << response << std::endl;
+        return response;
+    }
+
+
+}
+

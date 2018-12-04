@@ -46,13 +46,17 @@ Cryocooler::Cryocooler(std::string port):SerialDevice(port){
     }
 
     /*This is needed to init the cryocooler. Why? We dont know!*/
+    printf("Starting\n");
     sleep(1);
-    printf ("Flushing the serial line\n");
     this->WriteString("VERSION\r");
     sleep(1);
     this->ReadLine();
     this->ReadLine();
     sleep(1);
+
+    this->PAsk=0;
+    printf ("Sunpower CryoCooler is initialized and ready to accept instructions.\n");
+
 }
 
 
@@ -128,12 +132,98 @@ void Cryocooler::checkIfON(void){
 
 }
 
+void Cryocooler::PowerOnOff(bool newPowerState){
+
+    std::string CC_String, CC_Firstline;
+    std::string CCCMd;
+    bool sstop_status;
+
+    if (newPowerState==1){
+
+        CCCMd = "SET SSTOP=0\r";
+        this->WriteString(CCCMd);
+        //Read first line
+        CC_Firstline = this->ReadLine();
+        //SSTOP Status is in second line
+        CC_String = this->ReadLine();
+        sstop_status = std::stod(CC_String);
+
+        if (sstop_status == 1) this->isON = false;
+        else this->isON = true;
+
+    /*This next case is not trivial!!*/
+    } else if (newPowerState==0) {
+
+        CCCMd = "SET SSTOP=1\r";
+        this->WriteString(CCCMd);
+        /*These are the set sstop command repeated*/
+        this->ReadLine();
+        this->ReadLine();
+
+        /*Now the BS controller will generate few lines until it gets to "Complete"*/
+        do {
+            CC_String = this->ReadLineThrowR();
+        } while (CC_String.compare(CC_String.size()-9,9,"COMPLETE.") !=0);
+
+        /*Clear the extra line*/
+        this->ReadLine();
+        //CC_Firstline = this->ReadLine();
+
+        /*Check if cryocooler is stopped*/
+        CCCMd = "SET SSTOP\r";
+        this->WriteString(CCCMd);
+
+        CC_Firstline = this->ReadLine();
+        CC_String = this->ReadLine();
+        sstop_status = std::stod(CC_String);
+
+        if (sstop_status == 1) this->isON = false;
+        else this->isON = true;
+
+    } else {
+        std::cout<<"New power state is unknown. Not changing power state."<<std::endl;
+        this->_newCCPowerState = this->isON;
+    }
+}
+
+void Cryocooler::AdjustCryoPower(void){
+
+    int minP = (int) this->PMin;
+
+    std::string CC_String, CC_Firstline;
+    std::string CCCMd = "SET PWOUT="+std::to_string(minP)+"\r";
+
+    this->WriteString(CCCMd);
+    //Read first line
+    CC_Firstline = this->ReadLine();
+    //TC is in second line
+    CC_String = this->ReadLine();
+    int newPwout = std::stod(CC_String);
+
+    this->PAsk = this->PMin;
+    
+
+
+}
 
 void Cryocooler::UpdateMysql(void){
     // Connect to server using a connection URL
     mysqlx::Session DDroneSession("localhost", 33060, "DAMICDrone", "Modane00");
-
     mysqlx::Schema DDb = DDroneSession.getSchema("DAMICDrone");
+
+
+    /*First lets get the control parameters*/
+    mysqlx::Table CtrlTable = DDb.getTable("ControlParameters");
+    mysqlx::RowResult ControlResult = CtrlTable.select("CCPowerState")
+      .bind("IDX", 1).execute();
+    /*The row with the result*/
+    mysqlx::Row CtrlRow = ControlResult.fetchOne();
+
+
+    this->_newCCPowerState = CtrlRow[0];
+
+
+
 
     // Accessing an existing table
     mysqlx::Table CCStats = DDb.getTable("CCState");
@@ -150,9 +240,6 @@ void Cryocooler::UpdateMysql(void){
     else (SQLStatusMsg = "WARN!\n");
     DDroneSession.close();
 
-}
-
-void Cryocooler::AdjustCryoPower(void){
 }
 
 

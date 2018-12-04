@@ -25,12 +25,16 @@ public:
     void GetE(void);
     void checkIfON(void);
 
+    void PowerOnOff(bool );
+
     void UpdateMysql(void);
     void AdjustCryoPower(void);
 
     float TC;
     float PCurrent,PMax,PMin, PSet;
+    float PAsk;
     bool isON;
+    bool _newCCPowerState;
 
     std::string SQLStatusMsg;
 

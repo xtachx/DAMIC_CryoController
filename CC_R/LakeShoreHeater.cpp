@@ -51,6 +51,8 @@ LakeShore::LakeShore(std::string SerialPort) : SerialDevice(SerialPort){
     this->WatchdogFuse = 1;
     this->setPW = 0;
 
+    printf("LakeShore 325 is now ready to accept instructions.\n");
+
 }
 
 

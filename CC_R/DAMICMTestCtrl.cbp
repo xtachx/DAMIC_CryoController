@@ -20,14 +20,20 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="CCDroneStart.cpp" />
 		<Unit filename="CMakeLists.txt" />
 		<Unit filename="Cryocooler.cpp" />
 		<Unit filename="Cryocooler.hpp" />
+		<Unit filename="DAMICMRawTest.cpp" />
 		<Unit filename="DAMICMTest.cpp" />
+		<Unit filename="LSHDroneStart.cpp" />
 		<Unit filename="LakeShoreHeater.cpp" />
 		<Unit filename="LakeShoreHeater.hpp" />
+		<Unit filename="PID_v1.cpp" />
+		<Unit filename="PID_v1.h" />
 		<Unit filename="SerialDeviceT.cpp" />
 		<Unit filename="SerialDeviceT.hpp" />
+		<Unit filename="TemperatureControl.cpp" />
 		<Unit filename="UtilityFunctions.cpp" />
 		<Unit filename="UtilityFunctions.hpp" />
 		<Extensions>

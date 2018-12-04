@@ -4,25 +4,6 @@
  *
  * *********************************************** */
 
-/*ROOT Headers*/
-#include "TH2F.h"
-#include "TMath.h"
-#include "TApplication.h"
-#include "TCanvas.h"
-
-#include "Math/Minimizer.h"
-#include "Math/Factory.h"
-#include "Math/Functor.h"
-#include "TError.h"
-#include "TParameter.h"
-#include "TFile.h"
-#include "TTree.h"
-#include "TArrayD.h"
-#include "TF1.h"
-#include "TGraph.h"
-#include <TSystem.h>
-
-
 /*Std headers*/
 #include <vector>
 #include <iostream>
@@ -130,7 +111,7 @@ int main( int argc, char** argv )
     myPID.SetMode(AUTOMATIC);
 
 
-    for (int i=0; i<1000; i++)
+    while (true)
     {
         //std::cout<<"New temperature: ";
         //std::cin>>Input;

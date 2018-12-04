@@ -21,6 +21,7 @@ public:
     ~SerialDevice();
     void WriteString(std::string s);
     std::string ReadLine();
+    std::string ReadLineThrowR();
 
 
     int USB;
