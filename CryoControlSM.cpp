@@ -15,7 +15,6 @@
 
 
 #include "CryoControlSM.hpp"
-#include "CCMySQLInteraction.cpp"
 #include "PID_v1.h"
 
 
@@ -28,7 +27,6 @@ CryoControlSM::CryoControlSM(void){
     CurrentTemperature=0;
     LastTemperature=0;
     TimeStamp=std::time(0);
-    TRate=0;
 
     /*The jump table to different states - implementation*/
     this->STFnTable={
@@ -41,11 +39,16 @@ CryoControlSM::CryoControlSM(void){
     };
 
     //The two PIDs
-    PID AbsPID(&CurrentTemperature, &TOutput, &TSetpoint, KpA, KiA, KdA, P_ON_M, DIRECT);
-    PID RatePID(&TempratureRateMovingAvg, &ROutput, &RSetpoint, KpR, KiR, KdR, P_ON_M, DIRECT);
+    this->AbsPID = new PID(&CurrentTemperature, &TOutput, &TSetpoint, KpA, KiA, KdA, P_ON_M, DIRECT);
+    this->RatePID = new PID(&TempratureRateMovingAvg, &ROutput, &RSetpoint, KpR, KiR, KdR, P_ON_M, DIRECT);
 
 }
 
+CryoControlSM::~CryoControlSM(void){
+    
+    delete this->AbsPID;
+    delete this->RatePID;
+}
 
 void CryoControlSM::SMEngine(void ){
 
@@ -58,13 +61,13 @@ void CryoControlSM::SMEngine(void ){
     /*Next look for changes*/
 
     /*Kp Ki Kd changes */
-    if (_thisDataSweep.kpA != this->AbsPID.GetKp() || _thisDataSweep.kiA != this->AbsPID.GetKi() || _thisDataSweep.kdA != this->AbsPID.GetKd()){
+    if (_thisDataSweep.kpA != this->AbsPID->GetKp() || _thisDataSweep.kiA != this->AbsPID->GetKi() || _thisDataSweep.kdA != this->AbsPID->GetKd()){
         printf("Tuning change!\n");
-        this->AbsPID.SetTunings(_thisDataSweep.kpA,_thisDataSweep.kiA,_thisDataSweep.kdA);
+        this->AbsPID->SetTunings(_thisDataSweep.kpA,_thisDataSweep.kiA,_thisDataSweep.kdA);
     }
-    if (_thisDataSweep.kpR != this->RatePID.GetKp() || _thisDataSweep.kiR != this->RatePID.GetKi() || _thisDataSweep.kdR != this->RatePID.GetKd()){
+    if (_thisDataSweep.kpR != this->RatePID->GetKp() || _thisDataSweep.kiR != this->RatePID->GetKi() || _thisDataSweep.kdR != this->RatePID->GetKd()){
         printf("Tuning change!\n");
-        this->RatePID.SetTunings(_thisDataSweep.kpR,_thisDataSweep.kiR,_thisDataSweep.kdR);
+        this->RatePID->SetTunings(_thisDataSweep.kpR,_thisDataSweep.kiR,_thisDataSweep.kdR);
     }
 
     /*Temperature set point*/
@@ -127,7 +130,7 @@ void CryoControlSM::StateSwitch(){
 
 
     //Switch the funtion pointer to the should be state function
-    this->CryoStateFn = (this->*(this->STFnTable[this->ShouldBeFSMState].second))()
+    this->CryoStateFn = this->STFnTable[ShouldBeFSMState];
 
     //Switch the state of the machine
     this->CurrentFSMState = this->ShouldBeFSMState;
@@ -145,8 +148,8 @@ void CryoControlSM::Warmup(void){
     if (this->EntryGuardActive){
 
         /*Activate the correct PID*/
-        this->AbsPID.SetMode(MANUAL);
-        this->RatePID.SetMode(AUTOMATIC);
+        this->AbsPID->SetMode(MANUAL);
+        this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = 4.5/60.0; //4.5 degrees per minute
@@ -159,7 +162,7 @@ void CryoControlSM::Warmup(void){
     }
 
     //Calculate Rate PID
-    this->RatePID.Compute();
+    this->RatePID->Compute();
     this->ThisRunPIDValue = this->ROutput;
 
 }
@@ -172,8 +175,8 @@ void CryoControlSM::Idle(void){
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
-        this->AbsPID.SetMode(MANUAL);
-        this->RatePID.SetMode(MANUAL);
+        this->AbsPID->SetMode(MANUAL);
+        this->RatePID->SetMode(MANUAL);
 
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
@@ -202,8 +205,8 @@ void CryoControlSM::CoolDownHot(void ){
     if (this->EntryGuardActive){
 
         /*Activate the correct PID*/
-        this->AbsPID.SetMode(MANUAL);
-        this->RatePID.SetMode(AUTOMATIC);
+        this->AbsPID->SetMode(MANUAL);
+        this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = -4.5/60.0; //4.5 degrees per minute
@@ -215,7 +218,7 @@ void CryoControlSM::CoolDownHot(void ){
     }
 
     //Calculate Rate PID
-    this->RatePID.Compute();
+    this->RatePID->Compute();
     this->ThisRunPIDValue = this->ROutput;
 
 
@@ -230,8 +233,8 @@ void CryoControlSM::CoolDownCold(void){
     if (this->EntryGuardActive){
 
         /*Activate the correct PID*/
-        this->AbsPID.SetMode(MANUAL);
-        this->RatePID.SetMode(AUTOMATIC);
+        this->AbsPID->SetMode(MANUAL);
+        this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = -4.5/60.0; //4.5 degrees per minute
@@ -243,7 +246,7 @@ void CryoControlSM::CoolDownCold(void){
     }
 
     //Calculate Rate PID
-    this->RatePID.Compute();
+    this->RatePID->Compute();
     this->ThisRunPIDValue = this->ROutput;
 
 
@@ -257,14 +260,14 @@ void CryoControlSM::MaintainWarm(void){
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
-        this->AbsPID.SetMode(AUTOMATIC);
-        this->RatePID.SetMode(MANUAL);
+        this->AbsPID->SetMode(AUTOMATIC);
+        this->RatePID->SetMode(MANUAL);
         this->EntryGuardActive = false;
     }
 
 
     //Calculate Rate PID
-    this->AbsPID.Compute();
+    this->AbsPID->Compute();
     this->ThisRunPIDValue = this->TOutput;
 
 
@@ -277,14 +280,14 @@ void CryoControlSM::MaintainCold(void){
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
-        this->AbsPID.SetMode(AUTOMATIC);
-        this->RatePID.SetMode(MANUAL);
+        this->AbsPID->SetMode(AUTOMATIC);
+        this->RatePID->SetMode(MANUAL);
         this->EntryGuardActive = false;
     }
 
 
     //Calculate Rate PID
-    this->AbsPID.Compute();
+    this->AbsPID->Compute();
     this->ThisRunPIDValue = this->TOutput;
 
 }

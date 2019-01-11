@@ -10,6 +10,8 @@
 
 #include <mysqlx/xdevapi.h>
 #include "MysqlCredentials.hpp"
+#include "CryoControlSM.hpp"
+#include <iostream>
 
 
 
@@ -28,14 +30,14 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     mysqlx::Row CtrlRow = ControlResult.fetchOne();
     
     _thisInteractionData.TTemp = CtrlRow[0];
-    _thisInteractionData.kp = CtrlRow[1];
-    _thisInteractionData.ki = CtrlRow[2];
-    _thisInteractionData.kd = CtrlRow[3];
+    _thisInteractionData.kpA = CtrlRow[1];
+    _thisInteractionData.kiA = CtrlRow[2];
+    _thisInteractionData.kdA = CtrlRow[3];
     _thisInteractionData.kpR = CtrlRow[4];
     _thisInteractionData.kiR = CtrlRow[5];
     _thisInteractionData.kdR = CtrlRow[6];
     _thisInteractionData.CCPowerStateLast = CtrlRow[7];
-    _thisInteractionData.WatchdogFuse = CtrlRow[8]
+    _thisInteractionData.WatchdogFuse = CtrlRow[8];
     
     /*Next - the current TC*/
     mysqlx::Table TCTable = DDb.getTable("CCState");
@@ -59,7 +61,7 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     
     // Insert SQL Table data
     mysqlx::Result LSHResult= LSHStats.insert("PID", "SystemState", "ShouldBeState")
-    .values(this->ThisRunPIDValue, this->CurrentFSMState, this->ShouldBeFSMState).execute();
+    .values(this->ThisRunPIDValue, (int)this->CurrentFSMState, (int)this->ShouldBeFSMState).execute();
     warnings=LSHResult.getWarningsCount();
     
     

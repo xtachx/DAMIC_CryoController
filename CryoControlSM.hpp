@@ -43,16 +43,16 @@ class CryoControlSM {
 private:
 
 
-    float LastTemperature;
-    float TempratureRateMovingAvg;
+    double LastTemperature;
+    double TempratureRateMovingAvg;
 
 
-    float SetTemperature;
+    double SetTemperature;
     unsigned long TimeStamp;
 
 
-    float TInput, TOutput, TSetpoint;
-    float RInput, ROutput, RSetpoint;
+    double TInput, TOutput, TSetpoint;
+    double RInput, ROutput, RSetpoint;
 
     bool CCoolerPower=0;
 
@@ -61,6 +61,7 @@ private:
 public:
 
     CryoControlSM();
+    ~CryoControlSM(void );
 
     /*SM Functions and states*/
 
@@ -79,10 +80,12 @@ public:
     double KpA=2, KiA=5, KdA=1;
     double KpR=2, KiR=5, KdR=1;
 
-    float ThisRunPIDValue=0.0;
-    float CurrentTemperature;
-
-
+    double ThisRunPIDValue=0.0;
+    double CurrentTemperature=0.0;
+    
+    PID* AbsPID;
+    PID* RatePID;
+    
     /*We have two different PIDs.
      *
      *1. For controlling the absolute value of the temperature
@@ -106,7 +109,7 @@ public:
     };
 
     /*Jump table function for the FSM states*/
-    static std::map<FSMStates, void (CryoControlSM::*)( void)> STFnTable;
+    std::map<FSMStates, void (CryoControlSM::*)( void)> STFnTable;
     void (CryoControlSM::* CryoStateFn)(void);
 
     FSMStates CurrentFSMState;
@@ -119,6 +122,8 @@ public:
     bool ExitGuardActive=false;
 
     bool FSMMode=AUTOMATIC;
+    
+    
 
 };
 
