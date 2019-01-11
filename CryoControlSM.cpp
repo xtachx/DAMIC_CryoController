@@ -74,6 +74,7 @@ void CryoControlSM::SMEngine(void ){
     if (_thisDataSweep.TTemp != this->TSetpoint){
         printf("Temperature setpoint change!\n");
         this->TSetpoint =_thisDataSweep.TTemp;
+        this->SetTemperature = _thisDataSweep.TTemp;
     }
 
     /*Current temperature and rate*/

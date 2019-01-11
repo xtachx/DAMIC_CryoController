@@ -51,7 +51,7 @@ private:
     unsigned long TimeStamp;
 
 
-    double TInput, TOutput;
+    double TInput, TOutput, TSetpoint;
     double RInput, ROutput, RSetpoint;
 
     bool CCoolerPower=0;
@@ -82,7 +82,7 @@ public:
 
     double ThisRunPIDValue=0.0;
     double CurrentTemperature=0.0;
-    double TSetpoint=0.0;
+    double SetTemperature=0.0;
     
     PID* AbsPID;
     PID* RatePID;
