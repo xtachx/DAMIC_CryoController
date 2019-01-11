@@ -47,11 +47,11 @@ private:
     double TempratureRateMovingAvg;
 
 
-    double SetTemperature;
+    
     unsigned long TimeStamp;
 
 
-    double TInput, TOutput, TSetpoint;
+    double TInput, TOutput;
     double RInput, ROutput, RSetpoint;
 
     bool CCoolerPower=0;
@@ -82,6 +82,7 @@ public:
 
     double ThisRunPIDValue=0.0;
     double CurrentTemperature=0.0;
+    double TSetpoint=0.0;
     
     PID* AbsPID;
     PID* RatePID;
