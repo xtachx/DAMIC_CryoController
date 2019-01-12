@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project( DAMICMCtrl )
-
-
+project( DAMICMCryoCtrl )
 
 set (CMAKE_CXX_FLAGS "-Wno-write-strings -std=gnu++1y -I/usr/include/mysql-cppconn-8 -O3 -march=native -m64")
 set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -lmysqlcppconn8 -lm")
@@ -41,21 +39,13 @@ set(HEADERSSM
    ${CMAKE_CURRENT_SOURCE_DIR}/MysqlCredentials.hpp
 )
 
-#add_executable( DAMICMCtrl DAMICMTest.cpp )
-#target_link_libraries( DAMICMCtrl ${SOURCE} ${HEADERS})
 
+add_executable( CCDrone CCDroneStart.cpp )
+target_link_libraries( CCDrone ${SOURCECC} ${HEADERSCC})
 
-#add_executable( DAMICRTest DAMICMRawTest.cpp )
-#target_link_libraries( DAMICRTest ${SOURCE} ${HEADERS})
-
-#add_executable( CCDrone CCDroneStart.cpp )
-#target_link_libraries( CCDrone ${SOURCECC} ${HEADERSCC})
-
-#add_executable( LSHDrone LSHDroneStart.cpp )
-#target_link_libraries( LSHDrone ${SOURCELSH} ${HEADERSLSH})
-
-
+add_executable( LSHDrone LSHDroneStart.cpp )
+target_link_libraries( LSHDrone ${SOURCELSH} ${HEADERSLSH})
 
 add_executable( StartSM StartSM.cpp )
 target_link_libraries( StartSM ${SOURCESM} ${HEADERSSM})
-#
+
