@@ -12,6 +12,11 @@
 #include <stdio.h>
 #include "PID_v1.h"
 #include <map>
+#include <algorithm>
+#include <cmath>
+#include <vector>
+#include <iomanip>
+
 
 #define RateMovingAvgN 20
 
@@ -43,7 +48,7 @@ class CryoControlSM {
 private:
 
 
-    double LastTemperature;    
+    double LastTemperature;
     unsigned long TimeStamp;
 
 
@@ -52,16 +57,32 @@ private:
 
     bool CCoolerPower=0;
 
+    /*SM variables and memory*/
+    double KpA=2, KiA=5, KdA=1;
+    double KpR=2, KiR=5, KdR=1;
+
+    /*Process related variables*/
+    double ThisRunPIDValue=0.0;
+    double CurrentTemperature=0.0;
+    double SetTemperature=0.0;
+    double TempratureRateMovingAvg=0.0;
+    double RSetpoint=0.0;
 
 
-public:
 
-    CryoControlSM();
-    ~CryoControlSM(void );
+    /* ***********************************************************
+     *We have two different PIDs.
+     *
+     *1. For controlling the absolute value of the temperature
+     *   and is used around setpoints when stability is desired.
+     *
+     *2. For controlling the rate of ascent or descent of temperature
+     * ***********************************************************/
+
+    PID* AbsPID;
+    PID* RatePID;
 
     /*SM Functions and states*/
-
-    void SMEngine(void);
     void UpdateVars(DataPacket &);
 
     void Idle(void);
@@ -71,31 +92,6 @@ public:
 
     void MaintainWarm(void);
     void MaintainCold(void);
-
-    /*SM variables and memory*/
-    double KpA=2, KiA=5, KdA=1;
-    double KpR=2, KiR=5, KdR=1;
-
-    double ThisRunPIDValue=0.0;
-    double CurrentTemperature=0.0;
-    double SetTemperature=0.0;
-    double TempratureRateMovingAvg;
-    double RSetpoint=0.0;
-    
-    PID* AbsPID;
-    PID* RatePID;
-    
-    /*We have two different PIDs.
-     *
-     *1. For controlling the absolute value of the temperature
-     *   and is used around setpoints when stability is desired.
-     *
-     *2. For controlling the rate of ascent or descent of temperature
-     *
-     *I am not sure for #2 will work but we will see what happens.
-     */
-
-
 
     /*Enum values of all the states that the FSM can be in*/
     enum FSMStates {
@@ -107,7 +103,9 @@ public:
         ST_MaintainCold
     };
 
-    /*Jump table function for the FSM states*/
+
+
+    /*Jump table function for the FSM states and the function poiter to the current state*/
     std::map<FSMStates, void (CryoControlSM::*)( void)> STFnTable;
     void (CryoControlSM::* CryoStateFn)(void);
 
@@ -119,10 +117,27 @@ public:
 
     bool EntryGuardActive=false;
     bool ExitGuardActive=false;
-
     bool FSMMode=AUTOMATIC;
-    
-    
+
+
+public:
+
+    CryoControlSM();
+    ~CryoControlSM(void );
+
+    /*The SM Engine to be run at every time interval*/
+    void SMEngine(void);
+
+    /*Functions to access a copy of variables for viewing*/
+    double getCurrentTemperature(void);
+    double getTargetTemperature(void);
+    double getCurrentPIDValue(void);
+    double getTemperatureRate(void);
+    double getTemperatureSP(void);
+    double getTRateSP(void);
+    int getCurrentState(void);
+    int getShouldBeState(void);
+
 
 };
 

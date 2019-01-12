@@ -36,6 +36,7 @@
 		<Unit filename="PID_v1.h" />
 		<Unit filename="SerialDeviceT.cpp" />
 		<Unit filename="SerialDeviceT.hpp" />
+		<Unit filename="StartSM.cpp" />
 		<Unit filename="TemperatureControl.cpp" />
 		<Unit filename="UtilityFunctions.cpp" />
 		<Unit filename="UtilityFunctions.hpp" />

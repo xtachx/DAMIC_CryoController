@@ -1,4 +1,0 @@
-AlbertaGeyser
-=============
-
-Alberta Geyser
