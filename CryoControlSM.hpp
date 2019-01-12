@@ -13,7 +13,7 @@
 #include "PID_v1.h"
 #include <map>
 
-#define RateMovingAvgN 10
+#define RateMovingAvgN 20
 
 
 struct DataPacket{
@@ -43,16 +43,12 @@ class CryoControlSM {
 private:
 
 
-    double LastTemperature;
-    double TempratureRateMovingAvg;
-
-
-    
+    double LastTemperature;    
     unsigned long TimeStamp;
 
 
-    double TInput, TOutput, TSetpoint;
-    double RInput, ROutput, RSetpoint;
+    double TInput, TOutput;
+    double RInput, ROutput;
 
     bool CCoolerPower=0;
 
@@ -83,6 +79,8 @@ public:
     double ThisRunPIDValue=0.0;
     double CurrentTemperature=0.0;
     double SetTemperature=0.0;
+    double TempratureRateMovingAvg;
+    double RSetpoint=0.0;
     
     PID* AbsPID;
     PID* RatePID;

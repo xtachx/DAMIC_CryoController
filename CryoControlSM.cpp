@@ -39,7 +39,7 @@ CryoControlSM::CryoControlSM(void){
     };
 
     //The two PIDs
-    this->AbsPID = new PID(&CurrentTemperature, &TOutput, &TSetpoint, KpA, KiA, KdA, P_ON_M, DIRECT);
+    this->AbsPID = new PID(&CurrentTemperature, &TOutput, &SetTemperature, KpA, KiA, KdA, P_ON_M, DIRECT);
     this->RatePID = new PID(&TempratureRateMovingAvg, &ROutput, &RSetpoint, KpR, KiR, KdR, P_ON_M, DIRECT);
 
 }
@@ -62,29 +62,31 @@ void CryoControlSM::SMEngine(void ){
 
     /*Kp Ki Kd changes */
     if (_thisDataSweep.kpA != this->AbsPID->GetKp() || _thisDataSweep.kiA != this->AbsPID->GetKi() || _thisDataSweep.kdA != this->AbsPID->GetKd()){
-        printf("Tuning change!\n");
+        printf("\nTuning change!\n");
         this->AbsPID->SetTunings(_thisDataSweep.kpA,_thisDataSweep.kiA,_thisDataSweep.kdA);
     }
     if (_thisDataSweep.kpR != this->RatePID->GetKp() || _thisDataSweep.kiR != this->RatePID->GetKi() || _thisDataSweep.kdR != this->RatePID->GetKd()){
-        printf("Tuning change!\n");
+        printf("\nTuning change!\n");
         this->RatePID->SetTunings(_thisDataSweep.kpR,_thisDataSweep.kiR,_thisDataSweep.kdR);
     }
 
     /*Temperature set point*/
-    if (_thisDataSweep.TTemp != this->TSetpoint){
+    if (_thisDataSweep.TTemp != this->SetTemperature){
         printf("Temperature setpoint change!\n");
-        this->TSetpoint =_thisDataSweep.TTemp;
         this->SetTemperature = _thisDataSweep.TTemp;
     }
 
     /*Current temperature and rate*/
     this->LastTemperature = this->CurrentTemperature;
     this->CurrentTemperature = _thisDataSweep.curTemp;
-    if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg = (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
+    if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg += (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
 
     /*This part decides what state the system should be in, and then switch if needed*/
     this->StateDecision();
     if (this->CurrentFSMState != this->ShouldBeFSMState) this->StateSwitch();
+
+    /*Finally, run the state function*/
+    (this->*CryoStateFn)();
 
 }
 
@@ -116,7 +118,7 @@ void CryoControlSM::StateDecision(void ){
 
 
     if (this->SetTemperature > 220 &&
-        std::fabs(this->SetTemperature - this->CurrentTemperature) <= 10 &&
+        std::fabs(this->SetTemperature - this->CurrentTemperature) <= 2 &&
         this->CurrentTemperature > 220) {
             this->ShouldBeFSMState=ST_MaintainWarm;
             if (this->SetTemperature<290)
@@ -129,6 +131,10 @@ void CryoControlSM::StateDecision(void ){
 
 void CryoControlSM::StateSwitch(){
 
+    printf("Switching states\n");
+
+    //Activate entry guard
+    this->EntryGuardActive=true;
 
     //Switch the funtion pointer to the should be state function
     this->CryoStateFn = this->STFnTable[ShouldBeFSMState];
@@ -142,11 +148,11 @@ void CryoControlSM::StateSwitch(){
 
 void CryoControlSM::Warmup(void){
 
-    //Debug prints
-    printf("Entered warmup state\n");
-
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+	
+	//Debug prints
+        printf("Entered warmup state\n");
 
         /*Activate the correct PID*/
         this->AbsPID->SetMode(MANUAL);
@@ -171,11 +177,13 @@ void CryoControlSM::Warmup(void){
 
 void CryoControlSM::Idle(void){
 
-    //Debug prints
-    printf("Entered Idle state\n");
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+
+	//Debug prints
+    	printf("Entered Idle state\n");
+
         this->AbsPID->SetMode(MANUAL);
         this->RatePID->SetMode(MANUAL);
 
@@ -199,11 +207,13 @@ void CryoControlSM::Idle(void){
 
 void CryoControlSM::CoolDownHot(void ){
 
-    //Debug prints
-    printf("Entered CoolDownHot state\n");
-
+    
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+
+	//Debug prints
+    	printf("Entered CoolDownHot state\n");
+
 
         /*Activate the correct PID*/
         this->AbsPID->SetMode(MANUAL);
@@ -227,11 +237,13 @@ void CryoControlSM::CoolDownHot(void ){
 
 void CryoControlSM::CoolDownCold(void){
 
-    //Debug prints
-    printf("Entered CoolDownCold state\n");
+    
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+
+	//Debug prints
+    	printf("Entered CoolDownCold state\n");
 
         /*Activate the correct PID*/
         this->AbsPID->SetMode(MANUAL);
@@ -256,13 +268,15 @@ void CryoControlSM::CoolDownCold(void){
 
 void CryoControlSM::MaintainWarm(void){
 
-    //Debug prints
-    printf("Entered MaintainWarm state\n");
-
+    
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+	//Debug prints
+    	printf("Entered MaintainWarm state\n");
+
         this->AbsPID->SetMode(AUTOMATIC);
         this->RatePID->SetMode(MANUAL);
+	this->CCoolerPower=0;
         this->EntryGuardActive = false;
     }
 
@@ -276,13 +290,17 @@ void CryoControlSM::MaintainWarm(void){
 
 void CryoControlSM::MaintainCold(void){
 
-    //Debug prints
-    printf("Entered MaintainCold state\n");
+    
 
     //Entry guard function: Activate rate PID
     if (this->EntryGuardActive){
+
+	//Debug prints
+    	printf("Entered MaintainCold state\n");
+
         this->AbsPID->SetMode(AUTOMATIC);
         this->RatePID->SetMode(MANUAL);
+	this->CCoolerPower=1;
         this->EntryGuardActive = false;
     }
 

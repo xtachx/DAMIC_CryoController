@@ -76,8 +76,8 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     
     //Update the CCPowerState if needed;
     if (_thisInteractionData.CCPowerStateLast != this->CCoolerPower){
-        //SCResult= SendControl.update().set("CCPowerState",this->CCoolerPower).where("IDX=1").execute();
-        //warnings+=SCResult.getWarningsCount();
+        SCResult= SendControl.update().set("CCPowerState",this->CCoolerPower).where("IDX=1").execute();
+        warnings+=SCResult.getWarningsCount();
         
         //Debug
         printf("Cryocooler switch %d\n",this->CCoolerPower);
