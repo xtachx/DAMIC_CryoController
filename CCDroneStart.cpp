@@ -27,7 +27,7 @@ int main( int argc, char** argv )
 
     int numRefreshes = 0;
 
-    Cryocooler *SunPowerCC = new Cryocooler("/dev/ttyUSB0");
+    Cryocooler *SunPowerCC = new Cryocooler("/dev/SunPowerCC");
     sleep(1);
 
     while (true){

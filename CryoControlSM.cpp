@@ -319,11 +319,11 @@ void CryoControlSM::MaintainCold(void){
 
 
 /*The functions to access a copy of variables for viewing*/
-double CryoControlSM::getCurrentTemperature(void) {return this->CurrentTemperature};
-double CryoControlSM::getTargetTemperature(void) {return this->SetTemperature};
-double CryoControlSM::getCurrentPIDValue(void) {return this->ThisRunPIDValue};
-double CryoControlSM::getTemperatureRate(void) {return this->TempratureRateMovingAvg};
-double CryoControlSM::getTemperatureSP(void) {return this->SetTemperature};
-double CryoControlSM::getTRateSP(void) {return this->RSetpoint};
-int CryoControlSM::getCurrentState(void) {return (int)this->CurrentFSMState};
-int CryoControlSM::getShouldBeState(void) {return (int)this->ShouldBeFSMState};
+double CryoControlSM::getCurrentTemperature(void) {return this->CurrentTemperature;}
+double CryoControlSM::getTargetTemperature(void) {return this->SetTemperature;}
+double CryoControlSM::getCurrentPIDValue(void) {return this->ThisRunPIDValue;}
+double CryoControlSM::getTemperatureRate(void) {return this->TempratureRateMovingAvg;}
+double CryoControlSM::getTemperatureSP(void) {return this->SetTemperature;}
+double CryoControlSM::getTRateSP(void) {return this->RSetpoint;}
+int CryoControlSM::getCurrentState(void) {return (int)this->CurrentFSMState;}
+int CryoControlSM::getShouldBeState(void) {return (int)this->ShouldBeFSMState;}

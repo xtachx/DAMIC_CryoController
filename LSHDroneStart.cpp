@@ -25,7 +25,7 @@ int main( int argc, char** argv )
 
 
 
-    LakeShore *LSHeater = new LakeShore("/dev/ttyUSB1");
+    LakeShore *LSHeater = new LakeShore("/dev/LakeShoreH");
     sleep(1);
 
     while (true){

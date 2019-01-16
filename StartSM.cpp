@@ -5,7 +5,7 @@
 
 /*Std headers*/
 #include <iostream>
-
+#include <unistd.h>
 #include "CryoControlSM.hpp"
 
 
