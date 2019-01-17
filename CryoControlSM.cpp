@@ -100,7 +100,12 @@ void CryoControlSM::StateDecision(void ){
     }
 
     /*Warmup State conditions*/
-    if (this->SetTemperature > this->CurrentTemperature + 10) this->ShouldBeFSMState=ST_Warmup;
+    
+    if (this->CurrentTemperature > 300 && this->SetTemperature <300)
+        this->ShouldBeFSMState=ST_Idle; //this should never happen in practice. If it does, then idle.
+    
+    if (this->SetTemperature > this->CurrentTemperature + 10 &&
+        this->CurrentTemperature < 290) this->ShouldBeFSMState=ST_Warmup;
 
     /*Cooldown while the current temperature is high - i.e. >220 K*/
     if (this->SetTemperature < 220 &&
