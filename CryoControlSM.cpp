@@ -19,14 +19,6 @@
 
 CryoControlSM::CryoControlSM(void){
 
-    /*Current starting state for FSM is idle. Should be state is also idle*/
-    CurrentFSMState = ST_Idle;
-    ShouldBeFSMState = ST_Idle;
-
-    CurrentTemperature=0;
-    LastTemperature=0;
-    TimeStamp=std::time(0);
-
     /*The jump table to different states - implementation*/
     this->STFnTable={
         {ST_Idle, &CryoControlSM::Idle},
@@ -36,6 +28,16 @@ CryoControlSM::CryoControlSM(void){
         {ST_MaintainWarm, &CryoControlSM::MaintainWarm},
         {ST_MaintainCold, &CryoControlSM::MaintainCold}
     };
+
+    /*Current starting state for FSM is idle. Should be state is also idle*/
+    CurrentFSMState = ST_Idle;
+    ShouldBeFSMState = ST_Idle;
+    this->CryoStateFn = this->STFnTable[ShouldBeFSMState];
+
+    CurrentTemperature=0;
+    LastTemperature=0;
+    TimeStamp=std::time(0);
+    
 
     /*The two PID implementations*/
     this->AbsPID = new PID(&CurrentTemperature, &TOutput, &SetTemperature, KpA, KiA, KdA, P_ON_M, DIRECT);
