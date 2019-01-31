@@ -168,7 +168,7 @@ void CryoControlSM::Warmup(void){
         this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
-        this->RSetpoint = 4.5/60.0; //4.5 degrees per minute
+        this->RSetpoint = DeltaTRatePerMin/60.0; //4.5 degrees per sec
 
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
@@ -226,7 +226,7 @@ void CryoControlSM::CoolDownHot(void ){
         this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
-        this->RSetpoint = -4.5/60.0; //4.5 degrees per minute
+        this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; // degrees per sec
 
         /*Turn cryocooler on*/
         this->CCoolerPower=1;
@@ -256,7 +256,7 @@ void CryoControlSM::CoolDownCold(void){
         this->RatePID->SetMode(AUTOMATIC);
 
         /*Set the correct rate direction for the rate*/
-        this->RSetpoint = -4.5/60.0; //4.5 degrees per minute
+        this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; //4.5 degrees per minute
         /*Turn cryocooler on*/
         this->CCoolerPower=1;
 
