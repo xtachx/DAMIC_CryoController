@@ -35,6 +35,7 @@ public:
     float PAsk;
     bool isON;
     bool _newCCPowerState;
+    int _newCCPower;
 
     std::string SQLStatusMsg;
 

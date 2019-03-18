@@ -191,9 +191,14 @@ void Cryocooler::PowerOnOff(bool newPowerState){
 void Cryocooler::AdjustCryoPower(void){
 
     int minP = (int) this->PMin;
+    int maxP = (int) this->PMax;
+
+    int _sendCCPower;
+    _sendCCPower = this->_newCCPower > minP ? this->_newCCPower : minP;
+    _sendCCPower = this->_sendCCPower > maxP ? maxP : this->_sendCCPower;
 
     std::string CC_String, CC_Firstline;
-    std::string CCCMd = "SET PWOUT="+std::to_string(minP)+"\r";
+    std::string CCCMd = "SET PWOUT="+std::to_string(_sendCCPower)+"\r";
 
     this->WriteString(CCCMd);
     //Read first line
@@ -203,7 +208,7 @@ void Cryocooler::AdjustCryoPower(void){
     int newPwout = std::stod(CC_String);
 
     this->PAsk = this->PMin;
-    
+
 
 
 }
@@ -216,13 +221,14 @@ void Cryocooler::UpdateMysql(void){
 
     /*First lets get the control parameters*/
     mysqlx::Table CtrlTable = DDb.getTable("ControlParameters");
-    mysqlx::RowResult ControlResult = CtrlTable.select("CCPowerState")
+    mysqlx::RowResult ControlResult = CtrlTable.select("CCPowerState","CCPower")
       .bind("IDX", 1).execute();
     /*The row with the result*/
     mysqlx::Row CtrlRow = ControlResult.fetchOne();
 
 
     this->_newCCPowerState = CtrlRow[0];
+    this->_newCCPower = CtrlRow[1];
 
 
 
