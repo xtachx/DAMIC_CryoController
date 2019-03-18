@@ -23,9 +23,11 @@ public:
     void SetPowerLevel(float PW);
     void TurnONOFF(int );
     void UpdateMysql(void);
+    void ReadTemperatureK(void);
 
 
     float currentPW;
+    float currentTempK;
     float setPW;
     int currentMode;
     int setMode;

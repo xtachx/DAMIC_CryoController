@@ -32,6 +32,8 @@ int main( int argc, char** argv )
 
         LSHeater->ReadPower();
         LSHeater->ReadMode();
+        LSHeater->ReadTemperatureK();
+        
         LSHeater->UpdateMysql();
 
         if (LSHeater->_cWatchdogFuse != 1){
@@ -60,8 +62,8 @@ int main( int argc, char** argv )
 
 
         fflush(stdout);
-        printf ("\rLakeShore | PW: %.02f,  Mode (Set): %1d(%1d),  Watchdog Fuse: %.02d, MySQL: %s",
-                LSHeater->currentPW, LSHeater->currentMode, LSHeater->setMode, LSHeater->WatchdogFuse, LSHeater->SQLStatusMsg.c_str());
+        printf ("\rLakeShore | PW: %.02f, Temp: %.2f K,  Mode (Set): %1d(%1d),  Watchdog Fuse: %.02d, MySQL: %s",
+                LSHeater->currentPW, LSHeater->currentTempK, LSHeater->currentMode, LSHeater->setMode, LSHeater->WatchdogFuse, LSHeater->SQLStatusMsg.c_str());
 
         sleep(1);
 

@@ -52,6 +52,7 @@ LakeShore::LakeShore(std::string SerialPort) : SerialDevice(SerialPort){
 
     this->WatchdogFuse = 1;
     this->setPW = 0;
+    this->currentTempK = -1;
 
     printf("LakeShore 325 is now ready to accept instructions.\n");
 
@@ -78,6 +79,25 @@ void LakeShore::ReadPower()
     
     try{
         this->currentPW = std::stof(LSP_String);
+    } catch (...) {
+        printf("Error in ReadPower. Continuing...\n ");
+    }
+    
+}
+
+void LakeShore::ReadTemperatureK()
+{
+    std::string LSP_String;
+    std::string LSCmd = "KRDG?\r\n";
+
+
+    this->WriteString(LSCmd);
+    LSP_String = this->ReadLine();
+
+    //std::cout<<this->currentPW<<"\n";
+    
+    try{
+        this->currentTempK = std::stof(LSP_String);
     } catch (...) {
         printf("Error in ReadPower. Continuing...\n ");
     }
@@ -159,8 +179,8 @@ void LakeShore::UpdateMysql(void){
 
     // Insert SQL Table data
 
-    mysqlx::Result LSHResult= LSHStats.insert("HeaterPW", "SetPW", "HeaterMode", "WatchdogState")
-           .values(this->currentPW, this->setPW, this->currentMode, WatchdogFuse).execute();
+    mysqlx::Result LSHResult= LSHStats.insert("HeaterPW", "LSHTemp", "SetPW", "HeaterMode", "WatchdogState")
+           .values(this->currentPW, this->currentTempK, this->setPW, this->currentMode, WatchdogFuse).execute();
 
     unsigned int warnings;
     warnings=LSHResult.getWarningsCount();
