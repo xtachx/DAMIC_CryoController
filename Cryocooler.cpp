@@ -195,7 +195,7 @@ void Cryocooler::AdjustCryoPower(void){
 
     int _sendCCPower;
     _sendCCPower = this->_newCCPower > minP ? this->_newCCPower : minP;
-    _sendCCPower = this->_sendCCPower > maxP ? maxP : this->_sendCCPower;
+    _sendCCPower = _sendCCPower > maxP ? maxP : _sendCCPower;
 
     std::string CC_String, CC_Firstline;
     std::string CCCMd = "SET PWOUT="+std::to_string(_sendCCPower)+"\r";
