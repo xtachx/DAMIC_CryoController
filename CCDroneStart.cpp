@@ -41,8 +41,8 @@ int main( int argc, char** argv )
         SunPowerCC->UpdateMysql();
 
 
-        /*If the numrefreshes % 60 ==0 i.e. 1 minute, then reset the cryocooler power level*/
-        if (numRefreshes++%60==0){
+        /*Refresh the cryocooler power level*/
+        if (numRefreshes++%5==0){
             SunPowerCC->AdjustCryoPower();
             //numRefreshes=0;
         }

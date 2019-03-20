@@ -207,7 +207,7 @@ void Cryocooler::AdjustCryoPower(void){
     CC_String = this->ReadLine();
     int newPwout = std::stod(CC_String);
 
-    this->PAsk = this->PMin;
+    this->PAsk = _sendCCPower;
 
 
 

@@ -34,6 +34,8 @@ struct DataPacket{
 
     double TTemp;
     double curTemp;
+    double curTempLSH;
+    double PMin;
 
     double PID;
     double SystemState;
@@ -64,6 +66,8 @@ private:
 
     /*Process related variables*/
     double ThisRunPIDValue=0.0;
+    double ThisRunCCPower=0.0;
+    double SentCCPower=0.0;
     double CurrentTemperature=0.0;
     double SetTemperature=0.0;
     double TempratureRateMovingAvg=0.0;
@@ -138,6 +142,7 @@ public:
     double getTRateSP(void);
     int getCurrentState(void);
     int getShouldBeState(void);
+    double getSentCCPower(void);
 
 
 };
