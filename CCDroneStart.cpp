@@ -41,11 +41,15 @@ int main( int argc, char** argv )
         SunPowerCC->UpdateMysql();
 
 
-        /*If the numrefreshes % 60 ==0 i.e. 1 minute, then reset the cryocooler power level*/
-        if (numRefreshes++%60==0){
+        /*Refresh the cryocooler power level*/
+        if (numRefreshes++%5==0){
             SunPowerCC->AdjustCryoPower();
+            SunPowerCC->GetPIDState();
             //numRefreshes=0;
         }
+        
+        /*Change controller mode in case of failure*/
+        if (SunPowerCC->ControllerMode != 0 && numRefreshes%30==0) SunPowerCC->SetCryoMode();
 
         /*We can do the On/off check every minute so as to not fry the cryocooler by turning it on and off too fast*/
         if (SunPowerCC->_newCCPowerState!=SunPowerCC->isON && numRefreshes%30==0){
@@ -55,8 +59,8 @@ int main( int argc, char** argv )
         //printf("NR %d\n",numRefreshes);
 
         fflush(stdout);
-        printf ("\rSunpower CC | TC: %.02f,  PMax: %.02f,  PMin: %.02f,  PCur (Set/Ask): %.02f (%.2f / %.02f),  isON: %d SQL: %s",
-                        SunPowerCC->TC,SunPowerCC->PMax,SunPowerCC->PMin,SunPowerCC->PCurrent, SunPowerCC->PSet, SunPowerCC->PAsk,SunPowerCC->isON, SunPowerCC->SQLStatusMsg.c_str());
+        printf ("\rSunpower CC | TC: %.02f,  PMax: %.02f,  PMin: %.02f,  PCur (Set/Ask): %.02f (%.2f / %.02f),  isON: %d Mode: %d SQL: %s",
+                        SunPowerCC->TC,SunPowerCC->PMax,SunPowerCC->PMin,SunPowerCC->PCurrent, SunPowerCC->PSet, SunPowerCC->PAsk,SunPowerCC->isON,SunPowerCC->ControllerMode, SunPowerCC->SQLStatusMsg.c_str());
 
         sleep(1);
     }

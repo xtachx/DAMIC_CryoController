@@ -41,28 +41,34 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     
     /*Next - the current TC*/
     mysqlx::Table TCTable = DDb.getTable("CCState");
-    mysqlx::RowResult TCResult = TCTable.select("UNIX_TIMESTAMP(TimeS)", "TC")
+    mysqlx::RowResult TCResult = TCTable.select("UNIX_TIMESTAMP(TimeS)", "TC", "PMin")
     .orderBy("TimeS DESC").limit(1).execute();
     /*The row with the result*/
     mysqlx::Row TCRow = TCResult.fetchOne();
-    
     _thisInteractionData.curTemp = TCRow[1];
-    
-    //std::cout<<"TC: "<<curTemp<<"\n";
-    
+    _thisInteractionData.PMin = TCRow[2];
+
+
+    /*Next - the current TC from LakeShore RTD*/
+    mysqlx::Table LSHTable = DDb.getTable("LSHState");
+    mysqlx::RowResult LSHResult = LSHTable.select("UNIX_TIMESTAMP(TimeS)", "LSHTemp")
+            .orderBy("TimeS DESC").limit(1).execute();
+    /*The row with the result*/
+    mysqlx::Row LSHRow = LSHResult.fetchOne();
+    _thisInteractionData.curTempLSH = LSHRow[1];    
     
     
     
     /*Now update the monitoring table*/
     
     // Accessing an existing table
-    mysqlx::Table LSHStats = DDb.getTable("SMState");
+    mysqlx::Table SMStats = DDb.getTable("SMState");
     unsigned int warnings;
     
     // Insert SQL Table data
-    mysqlx::Result LSHResult= LSHStats.insert("PID", "SystemState", "ShouldBeState")
+    mysqlx::Result SMStatsResult= SMStats.insert("PID", "SystemState", "ShouldBeState")
     .values(this->ThisRunPIDValue, (int)this->CurrentFSMState, (int)this->ShouldBeFSMState).execute();
-    warnings=LSHResult.getWarningsCount();
+    warnings=SMStatsResult.getWarningsCount();
     
     
     
@@ -73,6 +79,13 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     // Insert SQL Table data
     mysqlx::Result SCResult= SendControl.update().set("HeaterPW",this->ThisRunPIDValue).where("IDX=1").execute();
     warnings+=SCResult.getWarningsCount();
+
+
+    //Update the CCPowerOutput
+    this->SentCCPower = this->ThisRunCCPower + _thisInteractionData.PMin;
+    SCResult= SendControl.update().set("CCPower",this->SentCCPower).where("IDX=1").execute();
+    warnings+=SCResult.getWarningsCount();
+
     
     //Update the CCPowerState if needed;
     if (_thisInteractionData.CCPowerStateLast != this->CCoolerPower){
@@ -83,6 +96,8 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
         printf("Cryocooler switch %d\n",this->CCoolerPower);
         
     }
+
+
         
     
     

@@ -42,6 +42,8 @@ CryoControlSM::CryoControlSM(void){
     /*The two PID implementations*/
     this->AbsPID = new PID(&CurrentTemperature, &TOutput, &SetTemperature, KpA, KiA, KdA, P_ON_M, DIRECT);
     this->RatePID = new PID(&TempratureRateMovingAvg, &ROutput, &RSetpoint, KpR, KiR, KdR, P_ON_M, DIRECT);
+    this->AbsPID->SetOutputLimits(0,75);
+    this->RatePID->SetOutputLimits(0,75);
 
 }
 
@@ -80,7 +82,11 @@ void CryoControlSM::SMEngine(void ){
 
     /*Now update the current and the last temperature. Also update the rate of change of temperature with the new information.*/
     this->LastTemperature = this->CurrentTemperature;
-    this->CurrentTemperature = _thisDataSweep.curTemp;
+
+    /*Logic to decide if the LSH RTD is unplugged. An unplugged RTD will show a temperature
+     *of ???*/
+    this->CurrentTemperature = _thisDataSweep.curTempLSH < 1 ? _thisDataSweep.curTemp : _thisDataSweep.curTempLSH;
+
     if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg += (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
 
     /*Decide what state the system should be in. Then run the function to switch state if needed.*/
@@ -167,6 +173,10 @@ void CryoControlSM::Warmup(void){
         this->AbsPID->SetMode(MANUAL);
         this->RatePID->SetMode(AUTOMATIC);
 
+        /*Turn off the cryocooler power control feature and put cryocooler to min power*/
+        this->RatePID->SetOutputLimits(0,75);
+        this->ThisRunCCPower = 0.0;
+
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = DeltaTRatePerMin/60.0; //4.5 degrees per sec
 
@@ -194,6 +204,10 @@ void CryoControlSM::Idle(void){
 
         this->AbsPID->SetMode(MANUAL);
         this->RatePID->SetMode(MANUAL);
+
+        /*Turn off the cryocooler power control feature and put cryocooler to min power*/
+        this->RatePID->SetOutputLimits(0,75);
+        this->ThisRunCCPower = 0.0;
 
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
@@ -255,8 +269,11 @@ void CryoControlSM::CoolDownCold(void){
         this->AbsPID->SetMode(MANUAL);
         this->RatePID->SetMode(AUTOMATIC);
 
+        /*Rate PID will now go negative if it needs acceleration from the cryocooler*/
+        this->RatePID->SetOutputLimits(-120,75);
+
         /*Set the correct rate direction for the rate*/
-        this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; //4.5 degrees per minute
+        this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; // degrees per minute
         /*Turn cryocooler on*/
         this->CCoolerPower=1;
 
@@ -264,9 +281,18 @@ void CryoControlSM::CoolDownCold(void){
         this->EntryGuardActive = false;
     }
 
-    /*Calculate Rate PID*/
+    /* Calculate Rate PID - this is the first trick to see if increasing the power
+     * during cooldown works for us or not without fiddling with Kp Ki Kd.*/
     this->RatePID->Compute();
-    this->ThisRunPIDValue = this->ROutput;
+
+    if (this->ROutput<0.0){
+        this->ThisRunPIDValue = 0.0;
+        this->ThisRunCCPower = fabs(this->ROutput);
+    } else {
+        this->ThisRunPIDValue = this->ROutput;
+        this->ThisRunCCPower = 0.0;
+    }
+
 
 
 }
@@ -311,6 +337,10 @@ void CryoControlSM::MaintainCold(void){
         this->AbsPID->SetMode(AUTOMATIC);
         this->RatePID->SetMode(MANUAL);
 
+        /*Turn off the cryocooler power control feature and put cryocooler to min power*/
+        this->RatePID->SetOutputLimits(-120,75);
+        
+
         /*Ensure cryocooler is off*/
         this->CCoolerPower=1;
 
@@ -334,3 +364,4 @@ double CryoControlSM::getTemperatureSP(void) {return this->SetTemperature;}
 double CryoControlSM::getTRateSP(void) {return this->RSetpoint;}
 int CryoControlSM::getCurrentState(void) {return (int)this->CurrentFSMState;}
 int CryoControlSM::getShouldBeState(void) {return (int)this->ShouldBeFSMState;}
+double CryoControlSM::getSentCCPower() {return this->SentCCPower;}
