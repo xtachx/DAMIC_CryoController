@@ -57,6 +57,7 @@ Cryocooler::Cryocooler(std::string port):SerialDevice(port){
     sleep(1);
 
     this->PAsk=0;
+    this->ControllerMode=0;
     printf ("Sunpower CryoCooler is initialized and ready to accept instructions.\n");
 
 }
@@ -80,7 +81,11 @@ void Cryocooler::GetTC(void)
     CCTC_Firstline = this->ReadLine();
     //TC is in second line
     CCTC_String = this->ReadLine();
-    this->TC = std::stof(CCTC_String);
+    try {
+        this->TC = std::stof(CCTC_String);
+    } catch (...){
+        std::cout<<"Exception in GetTC block\n";
+    }
 
 }
 
@@ -95,9 +100,34 @@ void Cryocooler::GetP(void){
     CC_Firstline = this->ReadLine();
     //TC is in second line
     CC_String = this->ReadLine();
-    this->PCurrent = std::stof(CC_String);
+    try{
+        this->PCurrent = std::stof(CC_String);
+    } catch (...){
+        std::cout<<"Exception in GetP block\n";
+    }
 
 }
+
+
+void Cryocooler::GetPIDState(void){
+
+    std::string CC_String, CC_Firstline;
+    std::string CCCMd = "SET PID\r";
+
+    this->WriteString(CCCMd);
+    //Read first line
+    CC_Firstline = this->ReadLine();
+    //TC is in second line
+    CC_String = this->ReadLine();
+    try{
+        this->ControllerMode = std::stod(CC_String);
+    } catch (...){
+        std::cout<<"Exception in GetPIDState block\n";
+    }
+
+}
+
+
 
 void Cryocooler::GetE(void){
 
@@ -108,13 +138,16 @@ void Cryocooler::GetE(void){
     //Read first line
     CC_Firstline = this->ReadLine();
 
+    try {
     CC_S1 = this->ReadLine();
     this->PMax = std::stof(CC_S1);
     CC_S2 = this->ReadLine();
     this->PMin = std::stof(CC_S2);
     CC_S3 = this->ReadLine();
     this->PSet = std::stof(CC_S3);
-
+    } catch (...){
+        std::cout<<"Exception in GetE block\n";
+    }
 }
 
 void Cryocooler::checkIfON(void){
@@ -177,8 +210,11 @@ void Cryocooler::PowerOnOff(bool newPowerState){
 
         CC_Firstline = this->ReadLine();
         CC_String = this->ReadLine();
-        sstop_status = std::stod(CC_String);
-
+        try {
+            sstop_status = std::stod(CC_String);
+        } catch (...){
+            std::cout<<"Exception in Get SSTOP block\n";
+        }
         if (sstop_status == 1) this->isON = false;
         else this->isON = true;
 
@@ -205,11 +241,33 @@ void Cryocooler::AdjustCryoPower(void){
     CC_Firstline = this->ReadLine();
     //TC is in second line
     CC_String = this->ReadLine();
-    int newPwout = std::stod(CC_String);
-
+    try {
+         int newPwout = std::stod(CC_String);
+    } catch (...){
+        std::cout<<"Exception in SetPW block\n";
+    }
     this->PAsk = _sendCCPower;
 
+}
 
+void Cryocooler::SetCryoMode(void){
+
+    std::string CC_String, CC_Firstline;
+    std::string CCCMd = "SET PID=0\r";
+
+    this->WriteString(CCCMd);
+    //Read first line
+    CC_Firstline = this->ReadLine();
+    //TC is in second line
+    CC_String = this->ReadLine();
+
+    try{
+        this->ControllerMode = std::stod(CC_String);
+    } catch (...){
+        std::cout<<"Exception in SetCryoMode block\n";
+    }
+
+    std::cout<<"Cryocooler mode was set to 0 (power control)\n";
 
 }
 
@@ -238,8 +296,8 @@ void Cryocooler::UpdateMysql(void){
 
     // Insert SQL Table data
 
-    mysqlx::Result CCQResult= CCStats.insert("TC", "PMin", "PMax", "PCur", "PoweredON")
-           .values(std::to_string(this->TC), std::to_string(this->PMin), std::to_string(this->PMax), std::to_string(this->PCurrent), std::to_string(this->isON)).execute();
+    mysqlx::Result CCQResult= CCStats.insert("TC", "PMin", "PMax", "PCur", "PoweredON", "ControlMode")
+           .values(std::to_string(this->TC), std::to_string(this->PMin), std::to_string(this->PMax), std::to_string(this->PCurrent), std::to_string(this->isON), std::to_string(this->ControllerMode)).execute();
 
     unsigned int warnings;
     warnings=CCQResult.getWarningsCount();

@@ -23,12 +23,14 @@ public:
     void GetTC(void);
     void GetP(void);
     void GetE(void);
+    void GetPIDState(void);
     void checkIfON(void);
 
     void PowerOnOff(bool );
 
     void UpdateMysql(void);
     void AdjustCryoPower(void);
+    void SetCryoMode(void);
 
     float TC;
     float PCurrent,PMax,PMin, PSet;
@@ -36,6 +38,7 @@ public:
     bool isON;
     bool _newCCPowerState;
     int _newCCPower;
+    int ControllerMode; 
 
     std::string SQLStatusMsg;
 
