@@ -242,15 +242,12 @@ void Cryocooler::AdjustCryoPower(void){
 
     this->PAsk = _sendCCPower;
 
-
-
 }
 
 void Cryocooler::SetCryoMode(void){
 
     std::string CC_String, CC_Firstline;
     std::string CCCMd = "SET PID=0\r";
-
 
     this->WriteString(CCCMd);
     //Read first line

@@ -272,6 +272,7 @@ void CryoControlSM::CoolDownCold(void){
         /*Rate PID will now go negative if it needs acceleration from the cryocooler*/
         this->RatePID->SetOutputLimits(-120,75);
 
+
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; // degrees per minute
         /*Turn cryocooler on*/
@@ -339,7 +340,6 @@ void CryoControlSM::MaintainCold(void){
 
         /*Turn off the cryocooler power control feature and put cryocooler to min power*/
         this->RatePID->SetOutputLimits(-120,75);
-        
 
         /*Ensure cryocooler is off*/
         this->CCoolerPower=1;
