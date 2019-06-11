@@ -210,8 +210,11 @@ void Cryocooler::PowerOnOff(bool newPowerState){
 
         CC_Firstline = this->ReadLine();
         CC_String = this->ReadLine();
-        sstop_status = std::stod(CC_String);
-
+        try {
+            sstop_status = std::stod(CC_String);
+        } catch (...){
+            std::cout<<"Exception in Get SSTOP block\n";
+        }
         if (sstop_status == 1) this->isON = false;
         else this->isON = true;
 
@@ -238,8 +241,11 @@ void Cryocooler::AdjustCryoPower(void){
     CC_Firstline = this->ReadLine();
     //TC is in second line
     CC_String = this->ReadLine();
-    int newPwout = std::stod(CC_String);
-
+    try {
+         int newPwout = std::stod(CC_String);
+    } catch (...){
+        std::cout<<"Exception in SetPW block\n";
+    }
     this->PAsk = _sendCCPower;
 
 }
