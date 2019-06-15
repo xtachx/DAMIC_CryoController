@@ -41,12 +41,14 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     
     /*Next - the current TC*/
     mysqlx::Table TCTable = DDb.getTable("CCState");
-    mysqlx::RowResult TCResult = TCTable.select("UNIX_TIMESTAMP(TimeS)", "TC", "PMin")
+    mysqlx::RowResult TCResult = TCTable.select("UNIX_TIMESTAMP(TimeS)", "TC", "PMin", "PMax")
     .orderBy("TimeS DESC").limit(1).execute();
     /*The row with the result*/
     mysqlx::Row TCRow = TCResult.fetchOne();
+    if (TCRow[0].getType() > 0) _thisInteractionData.LastCCTime = (long) TCRow[0];
     _thisInteractionData.curTemp = TCRow[1];
     _thisInteractionData.PMin = TCRow[2];
+    _thisInteractionData.PMax = TCRow[3];
 
 
     /*Next - the current TC from LakeShore RTD*/
@@ -55,6 +57,7 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
             .orderBy("TimeS DESC").limit(1).execute();
     /*The row with the result*/
     mysqlx::Row LSHRow = LSHResult.fetchOne();
+    if (LSHRow[0].getType() > 0) _thisInteractionData.LastLSHTime = (long) LSHRow[0];
     _thisInteractionData.curTempLSH = LSHRow[1];    
     
     
@@ -77,7 +80,7 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     mysqlx::Table SendControl = DDb.getTable("ControlParameters");
     
     // Insert SQL Table data
-    mysqlx::Result SCResult= SendControl.update().set("HeaterPW",this->ThisRunPIDValue).where("IDX=1").execute();
+    mysqlx::Result SCResult= SendControl.update().set("HeaterPW",this->ThisRunHeaterPower).where("IDX=1").execute();
     warnings+=SCResult.getWarningsCount();
 
 

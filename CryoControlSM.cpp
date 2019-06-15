@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <mysqlx/xdevapi.h>
 #include <cmath>
+#include <chrono>
 
 #include "CryoControlSM.hpp"
 #include "PID_v1.h"
@@ -26,7 +27,8 @@ CryoControlSM::CryoControlSM(void){
         {ST_CoolDownCold, &CryoControlSM::CoolDownCold},
         {ST_Warmup, &CryoControlSM::Warmup},
         {ST_MaintainWarm, &CryoControlSM::MaintainWarm},
-        {ST_MaintainCold, &CryoControlSM::MaintainCold}
+        {ST_MaintainCold, &CryoControlSM::MaintainCold},
+        {ST_fault, &CryoControlSM::Fault}
     };
 
     /*Current starting state for FSM is idle. Should be state is also idle*/
@@ -74,6 +76,14 @@ void CryoControlSM::SMEngine(void ){
         this->RatePID->SetTunings(_thisDataSweep.kpR,_thisDataSweep.kiR,_thisDataSweep.kdR);
     }
 
+    /*Cryocooler PMax and PMin*/
+    this->PMax = _thisDataSweep.PMax;
+    this->PMin = _thisDataSweep.PMin;
+
+    /*Last sweep times*/
+    this->LastCCTime = _thisDataSweep.LastCCTime;
+    this->LastLSHTime = _thisDataSweep.LastLSHTime;
+
     /*Temperature set point changes*/
     if (_thisDataSweep.TTemp != this->SetTemperature){
         printf("Temperature setpoint change!\n");
@@ -86,8 +96,13 @@ void CryoControlSM::SMEngine(void ){
     /*Logic to decide if the LSH RTD is unplugged. An unplugged RTD will show a temperature
      *of ???*/
     this->CurrentTemperature = _thisDataSweep.curTempLSH < 1 ? _thisDataSweep.curTemp : _thisDataSweep.curTempLSH;
-
     if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg += (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
+
+    /*Store the two temperatures independently. Measurement > 0 is there to prevent values of 0 or so if the RTD is disconnected*/
+    if (_thisDataSweep.curTemp >10  this->MovingAvgCCRTD += (_thisDataSweep.curTemp - this->MovingAvgCCRTD)/RateMovingAvgN;
+    if (_thisDataSweep.curTempLSH >10 ) this->MovingAvgLSHRTD += (_thisDataSweep.curTempLSH - this->MovingAvgLSHRTD)/RateMovingAvgN;
+
+
 
     /*Decide what state the system should be in. Then run the function to switch state if needed.*/
     this->StateDecision();
@@ -96,7 +111,59 @@ void CryoControlSM::SMEngine(void ){
     /*Finally, run the state function. Note: This probably should be run between decision and switch if one wants to use exit guards.*/
     (this->*CryoStateFn)();
 
+    /*Perform post run operations and sanity checks*/
+    this->PostRunSanityCheck();
+
+
+
 }
+
+void CryoControlSM::PostRunSanityCheck(void ){
+
+    /*Decouple the PID computation from the cryocooler power and heater power*/
+    if (this->ThisRunPIDValue<0.0){
+        /*PID is negative - CC power is increased, heater is set to 0*/
+        this->ThisRunHeaterPower = 0.0;
+        this->ThisRunCCPower = fabs(this->ThisRunPIDValue);
+    } else {
+        /*PID is positive - heater gets the power, CC Power is set to 0*/
+        this->ThisRunHeaterPower = this->ThisRunPIDValue;
+        this->ThisRunCCPower = 0.0;
+    }
+
+
+    /* Catastrophe prevention
+     * Condition: Temperature is over 320 C.
+     * Action: Both CC Power and Heater power set to 0.
+     */
+
+    if (this->MovingAvgCCRTD > 320 || this->MovingAvgLSHRTD > 320 ){
+        this->ThisRunHeaterPower = 0.0;
+        this->ThisRunCCPower = 0.0;
+        this->ShouldBeFSMState=ST_Fault;
+    }
+
+
+    /* Catastrophe condition 2
+     * Either the cryocontrol or the LSH control
+     * has crashed and is not responding.
+     */
+    time(&NowTime);
+    int LastDeltaLSH = difftime(NowTime,this->LastLSHTime);
+    int LastDeltaCC = difftime(NowTime,this->LastCCTime);
+
+    if (LastDeltaLSH > 30 || LastDeltaCC > 30)
+        printf("There has been no communication from LSH (%d) / Cryocooler(%d) in the last 30+ seconds!\n", LastDeltaLSH, LastDeltaCC);
+    if (LastDeltaLSH > 60 || LastDeltaCC > 60){
+        printf("Fault: No communication from LakeShore / CC.\n");
+        this->ThisRunHeaterPower = 0.0;
+        this->ThisRunCCPower = 0.0;
+        this->ShouldBeFSMState=ST_Fault;
+    }
+    
+
+}
+
 
 
 void CryoControlSM::StateDecision(void ){
@@ -175,6 +242,7 @@ void CryoControlSM::Warmup(void){
 
         /*Turn off the cryocooler power control feature and put cryocooler to min power*/
         this->RatePID->SetOutputLimits(0,75);
+        this->AbsPID->SetOutputLimits(0,75);
         this->ThisRunCCPower = 0.0;
 
         /*Set the correct rate direction for the rate*/
@@ -207,6 +275,7 @@ void CryoControlSM::Idle(void){
 
         /*Turn off the cryocooler power control feature and put cryocooler to min power*/
         this->RatePID->SetOutputLimits(0,75);
+        this->AbsPID->SetOutputLimits(0,75);
         this->ThisRunCCPower = 0.0;
 
         /*Turn cryocooler off*/
@@ -219,6 +288,35 @@ void CryoControlSM::Idle(void){
     this->ThisRunPIDValue = 0.0;
 
 }
+
+void CryoControlSM::Fault(void){
+
+
+    /*Entry guard function: Deactivate all PIDs.
+     *Turn off cryocooler.
+     */
+    if (this->EntryGuardActive){
+
+        this->AbsPID->SetMode(MANUAL);
+        this->RatePID->SetMode(MANUAL);
+
+        /*Turn off the cryocooler power control feature and put cryocooler to min power*/
+        this->RatePID->SetOutputLimits(0,75);
+        this->AbsPID->SetOutputLimits(0,75);
+
+        /*Turn cryocooler off*/
+        this->CCoolerPower=0;
+
+        this->EntryGuardActive = false;
+    }
+
+    /*System is at fault - so heater should be OFF*/
+    this->ThisRunPIDValue = 0.0;
+    this->ThisRunCCPower = 0.0;
+    this->ThisRunHeaterPower = 0.0;
+
+}
+
 
 
 /*Note: CooldownHot possibly requires
@@ -238,6 +336,9 @@ void CryoControlSM::CoolDownHot(void ){
         /*Activate the correct PID*/
         this->AbsPID->SetMode(MANUAL);
         this->RatePID->SetMode(AUTOMATIC);
+
+        this->RatePID->SetOutputLimits(0,75);
+        this->AbsPID->SetOutputLimits(0,75);
 
         /*Set the correct rate direction for the rate*/
         this->RSetpoint = -1.0*DeltaTRatePerMin/60.0; // degrees per sec
@@ -271,6 +372,8 @@ void CryoControlSM::CoolDownCold(void){
 
         /*Rate PID will now go negative if it needs acceleration from the cryocooler*/
         this->RatePID->SetOutputLimits(-120,75);
+        this->AbsPID->SetOutputLimits(-120,75);
+
 
 
         /*Set the correct rate direction for the rate*/
@@ -282,19 +385,9 @@ void CryoControlSM::CoolDownCold(void){
         this->EntryGuardActive = false;
     }
 
-    /* Calculate Rate PID - this is the first trick to see if increasing the power
-     * during cooldown works for us or not without fiddling with Kp Ki Kd.*/
+    /* Calculate Rate PID*/
     this->RatePID->Compute();
-
-    if (this->ROutput<0.0){
-        this->ThisRunPIDValue = 0.0;
-        this->ThisRunCCPower = fabs(this->ROutput);
-    } else {
-        this->ThisRunPIDValue = this->ROutput;
-        this->ThisRunCCPower = 0.0;
-    }
-
-
+    this->ThisRunPIDValue = this->ROutput;
 
 }
 
@@ -310,6 +403,9 @@ void CryoControlSM::MaintainWarm(void){
         /*Activate the correct PID*/
         this->AbsPID->SetMode(AUTOMATIC);
         this->RatePID->SetMode(MANUAL);
+
+        this->AbsPID->SetOutputLimits(0,75);
+        this->RatePID->SetOutputLimits(0,75);
 
         /*Ensure cryocooler is off*/
         this->CCoolerPower=0;
@@ -338,10 +434,11 @@ void CryoControlSM::MaintainCold(void){
         this->AbsPID->SetMode(AUTOMATIC);
         this->RatePID->SetMode(MANUAL);
 
-        /*Turn off the cryocooler power control feature and put cryocooler to min power*/
+        /*Turn off the cryocooler power control feature and put cryocooler to controlled power*/
         this->RatePID->SetOutputLimits(-120,75);
+        this->AbsPID->SetOutputLimits(-120,75);
 
-        /*Ensure cryocooler is off*/
+        /*Ensure cryocooler is on*/
         this->CCoolerPower=1;
 
         this->EntryGuardActive = false;
