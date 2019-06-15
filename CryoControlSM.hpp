@@ -16,10 +16,12 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
+#include <ctime>
 
 
 #define RateMovingAvgN 20
-#define DeltaTRatePerMin 3.0 
+#define DeltaTRatePerMin 3.0
+#define CryoCoolerMaxPowerDelta 20
 
 
 struct DataPacket{
@@ -36,12 +38,17 @@ struct DataPacket{
     double curTemp;
     double curTempLSH;
     double PMin;
+    double PMax;
 
     double PID;
     double SystemState;
 
     bool CCPowerStateLast;
     bool WatchdogFuse;
+
+
+    time_t LastCCTime;
+    time_t LastLSHTime;
 
 };
 
@@ -67,11 +74,21 @@ private:
     /*Process related variables*/
     double ThisRunPIDValue=0.0;
     double ThisRunCCPower=0.0;
+    double ThisRunHeaterPower=0.0;
     double SentCCPower=0.0;
     double CurrentTemperature=0.0;
     double SetTemperature=0.0;
     double TempratureRateMovingAvg=0.0;
     double RSetpoint=0.0;
+
+    double MovingAvgCCRTD = 0.0;
+    double MovingAvgLSHRTD=0.0;
+
+    double PMax = 0.0;
+    double PMin = 0.0;
+    time_t LastCCTime;
+    time_t LastLSHTime;
+    time_t NowTime;
 
 
 
@@ -97,6 +114,7 @@ private:
 
     void MaintainWarm(void);
     void MaintainCold(void);
+    void Fault(void);
 
     /*Enum values of all the states that the FSM can be in*/
     enum FSMStates {
@@ -105,7 +123,8 @@ private:
         ST_CoolDownCold,
         ST_Warmup,
         ST_MaintainWarm,
-        ST_MaintainCold
+        ST_MaintainCold,
+        ST_Fault
     };
 
 
@@ -143,6 +162,8 @@ public:
     int getCurrentState(void);
     int getShouldBeState(void);
     double getSentCCPower(void);
+
+    void PostRunSanityCheck(void);
 
 
 };
