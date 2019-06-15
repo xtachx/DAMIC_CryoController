@@ -140,27 +140,8 @@ void CryoControlSM::PostRunSanityCheck(void ){
     if (this->MovingAvgCCRTD > 320 || this->MovingAvgLSHRTD > 320 ){
         this->ThisRunHeaterPower = 0.0;
         this->ThisRunCCPower = 0.0;
-        this->ShouldBeFSMState=ST_Fault;
     }
 
-
-    /* Catastrophe condition 2
-     * Either the cryocontrol or the LSH control
-     * has crashed and is not responding.
-     */
-    time(&NowTime);
-    int LastDeltaLSH = difftime(NowTime,this->LastLSHTime);
-    int LastDeltaCC = difftime(NowTime,this->LastCCTime);
-
-    if (LastDeltaLSH > 30 || LastDeltaCC > 30)
-        printf("There has been no communication from LSH (%d) / Cryocooler(%d) in the last 30+ seconds!\n", LastDeltaLSH, LastDeltaCC);
-    if (LastDeltaLSH > 60 || LastDeltaCC > 60){
-        printf("Fault: No communication from LakeShore / CC.\n");
-        this->ThisRunHeaterPower = 0.0;
-        this->ThisRunCCPower = 0.0;
-        this->ShouldBeFSMState=ST_Fault;
-    }
-    
 
 }
 
@@ -209,6 +190,22 @@ void CryoControlSM::StateDecision(void ){
                         "The temperature will eventually stabilize at room temperature.\n");
         }
 
+
+    /* 
+     * Either the cryocontrol or the LSH control
+     * has crashed and is not responding - Fault mode.
+     */
+    time(&NowTime);
+    int LastDeltaLSH = difftime(NowTime,this->LastLSHTime);
+    int LastDeltaCC = difftime(NowTime,this->LastCCTime);
+
+    if ((LastDeltaLSH > 30 || LastDeltaCC > 30) && LastDeltaLSH < 60 && LastDeltaCC < 60)
+        printf("There has been no communication from LSH (%d) / Cryocooler(%d) in the last 30+ seconds!\n", LastDeltaLSH, LastDeltaCC);
+    if (LastDeltaLSH > 60 || LastDeltaCC > 60){
+        printf("Fault: No communication from LakeShore / CC.\n");
+        this->ShouldBeFSMState=ST_Fault;
+    }
+    
 
 }
 
