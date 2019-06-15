@@ -28,7 +28,7 @@ CryoControlSM::CryoControlSM(void){
         {ST_Warmup, &CryoControlSM::Warmup},
         {ST_MaintainWarm, &CryoControlSM::MaintainWarm},
         {ST_MaintainCold, &CryoControlSM::MaintainCold},
-        {ST_fault, &CryoControlSM::Fault}
+        {ST_Fault, &CryoControlSM::Fault}
     };
 
     /*Current starting state for FSM is idle. Should be state is also idle*/
@@ -99,7 +99,7 @@ void CryoControlSM::SMEngine(void ){
     if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg += (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
 
     /*Store the two temperatures independently. Measurement > 0 is there to prevent values of 0 or so if the RTD is disconnected*/
-    if (_thisDataSweep.curTemp >10  this->MovingAvgCCRTD += (_thisDataSweep.curTemp - this->MovingAvgCCRTD)/RateMovingAvgN;
+    if (_thisDataSweep.curTemp >10 )  this->MovingAvgCCRTD += (_thisDataSweep.curTemp - this->MovingAvgCCRTD)/RateMovingAvgN;
     if (_thisDataSweep.curTempLSH >10 ) this->MovingAvgLSHRTD += (_thisDataSweep.curTempLSH - this->MovingAvgLSHRTD)/RateMovingAvgN;
 
 
