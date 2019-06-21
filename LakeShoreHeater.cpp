@@ -139,6 +139,10 @@ void LakeShore::TurnONOFF(int pwstate){
 
 void LakeShore::SetPowerLevel(float newPowerLevel){
 
+    /*Make sure power level is not out of bounds*/
+    if (newPowerLevel < 0) newPowerLevel = 0;
+    if (newPowerLevel > 100 ) newPowerLevel = 100;
+
     std::string LSCmd;
     LSCmd = "MOUT 1,"+std::to_string(newPowerLevel)+"\r\n";
 

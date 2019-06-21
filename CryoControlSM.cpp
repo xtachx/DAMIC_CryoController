@@ -93,9 +93,11 @@ void CryoControlSM::SMEngine(void ){
     /*Now update the current and the last temperature. Also update the rate of change of temperature with the new information.*/
     this->LastTemperature = this->CurrentTemperature;
 
-    /*Logic to decide if the LSH RTD is unplugged. An unplugged RTD will show a temperature
+    /*REDO: Logic to decide if the LSH RTD is unplugged. An unplugged RTD will show a temperature
      *of ???*/
-    this->CurrentTemperature = _thisDataSweep.curTempLSH < 1 ? _thisDataSweep.curTemp : _thisDataSweep.curTempLSH;
+    //this->CurrentTemperature = _thisDataSweep.curTempLSH < 1 ? _thisDataSweep.curTemp : _thisDataSweep.curTempLSH;
+    this->CurrentTemperature = _thisDataSweep.curTemp;
+
     if (this->LastTemperature !=0 ) this->TempratureRateMovingAvg += (this->CurrentTemperature-this->LastTemperature)/RateMovingAvgN - this->TempratureRateMovingAvg/RateMovingAvgN;
 
     /*Store the two temperatures independently. Measurement > 0 is there to prevent values of 0 or so if the RTD is disconnected*/
