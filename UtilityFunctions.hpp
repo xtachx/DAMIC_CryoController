@@ -14,17 +14,12 @@
 
 #ifndef Utility_HPP_INCLUDED
 #define Utility_HPP_INCLUDED
+#include <string>
 
 
 /*Includes*/
-#include <opencv2/opencv.hpp>
 
-
-
-void debugShow(cv::Mat&);
-void showHistogramImage(cv::Mat& );
 void advance_cursor(void );
-float ImageDynamicRangeSum(cv::Mat&, int, int);
 size_t getFilesize(const std::string& );
 bool doesFileExist (const std::string& );
 

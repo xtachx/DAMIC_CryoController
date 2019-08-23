@@ -8,12 +8,13 @@ set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -lmysqlcppconn8 -lm")
 set(SOURCECC
    ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/Cryocooler.cpp
-   #${CMAKE_CURRENT_SOURCE_DIR}/helpers.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/UtilityFunctions.cpp
 )
 set(HEADERSCC
    ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/Cryocooler.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/MysqlCredentials.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/UtilityFunctions.hpp
 )
 
 

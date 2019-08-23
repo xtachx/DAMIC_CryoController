@@ -23,6 +23,9 @@ public:
     std::string ReadLine();
     std::string ReadLineThrowR();
 
+    /*More robust routines for stubborn processes like the cryocooler*/
+    std::string RReadLine(int &, bool &);
+
 
     int USB;
     struct termios tty;

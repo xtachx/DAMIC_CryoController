@@ -16,6 +16,7 @@
 #include <errno.h>      // Error number definitions
 #include <termios.h>    // POSIX terminal control definitions
 #include <unistd.h>
+#include <sys/select.h>
 
 #include "SerialDeviceT.hpp"
 
@@ -161,6 +162,87 @@ std::string SerialDevice::ReadLineThrowR()
         return "";
     }
     else if (n == 0)
+    {
+        //std::cout << "Read nothing!" << std::endl;
+        return "";
+    }
+    else
+    {
+        //std::cout << "Response: " << response << std::endl;
+        return response;
+    }
+
+
+}
+
+
+/***** Experimental features ******/
+std::string SerialDevice::RReadLine(int &NBytesRead, bool &status)
+{
+
+
+    /*File descriptors for select*/
+    fd_set read_fds, write_fds, except_fds;
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&except_fds);
+
+    FD_SET(USB, &read_fds);
+
+    /*Time structure for select*/
+
+    struct timeval timeout;
+    timeout.tv_sec=5;
+    timeout.tv_usec=0;
+
+
+
+    NBytesRead = 0;
+    int spot = 0;
+    char buf = '\0';
+    int i = 0;
+
+    /* Whole response*/
+    char response[1024];
+    memset(response, '\0', sizeof(response));
+
+
+    /*First char - things likely to go wrong here*/
+    if (select(USB+1, &read_fds, &write_fds, &except_fds, &timeout)==1){
+
+        NBytesRead = read( USB, &buf, 1 );
+        sprintf( &response[spot], "%c", buf );
+        spot += NBytesRead;
+
+        status = 0;
+
+    } else {
+
+
+        NBytesRead = 0;
+        status = 1;
+        return "";
+
+    }
+
+
+
+    /*next line onwards - things less likely to go wrong*/
+    do
+    {
+        NBytesRead = read( USB, &buf, 1 );
+
+        sprintf( &response[spot], "%c", buf );
+        spot += NBytesRead;
+    }
+    while( NBytesRead > 0 && buf != '\n');
+
+    if (NBytesRead < 0)
+    {
+        //std::cout << "Error reading: " << strerror(errno) << std::endl;
+        return "";
+    }
+    else if (NBytesRead == 0)
     {
         //std::cout << "Read nothing!" << std::endl;
         return "";

@@ -17,6 +17,7 @@
 #include "LakeShoreHeater.hpp"
 #include "Cryocooler.hpp"
 #include <mysqlx/xdevapi.h>
+#include "UtilityFunctions.hpp"
 
 
 
@@ -26,13 +27,19 @@ int main( int argc, char** argv )
 
 
     int numRefreshes = 0;
+    int Status, NReadBytes;
 
     Cryocooler *SunPowerCC = new Cryocooler("/dev/SunPowerCC");
     sleep(1);
 
+    
+
     while (true){
 
-        SunPowerCC->GetTC();
+        Status = SunPowerCC->GetTC();
+            if (Status!=0) continue;
+
+
         SunPowerCC->GetP();
         SunPowerCC->GetE();
         SunPowerCC->checkIfON();
@@ -61,6 +68,7 @@ int main( int argc, char** argv )
         fflush(stdout);
         printf ("\rSunpower CC | TC: %.02f,  PMax: %.02f,  PMin: %.02f,  PCur (Set/Ask): %.02f (%.2f / %.02f),  isON: %d Mode: %d SQL: %s",
                         SunPowerCC->TC,SunPowerCC->PMax,SunPowerCC->PMin,SunPowerCC->PCurrent, SunPowerCC->PSet, SunPowerCC->PAsk,SunPowerCC->isON,SunPowerCC->ControllerMode, SunPowerCC->SQLStatusMsg.c_str());
+	advance_cursor();
 
         sleep(1);
     }

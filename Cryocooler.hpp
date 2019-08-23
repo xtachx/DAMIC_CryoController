@@ -9,10 +9,15 @@
 #ifndef Cryocooler_HPP_INCLUDED
 #define Cryocooler_HPP_INCLUDED
 
+/*Defines*/
+#define DebugMode 1
 
 /*Includes*/
 #include <iostream>
 #include "SerialDeviceT.hpp"
+#include <fstream>
+#include <time.h>
+
 
 class Cryocooler:public SerialDevice
 {
@@ -20,7 +25,7 @@ public:
     Cryocooler(std::string);
     ~Cryocooler();
 
-    void GetTC(void);
+    int GetTC(void);
     void GetP(void);
     void GetE(void);
     void GetPIDState(void);
@@ -32,6 +37,8 @@ public:
     void AdjustCryoPower(void);
     void SetCryoMode(void);
 
+
+
     float TC;
     float PCurrent,PMax,PMin, PSet;
     float PAsk;
@@ -40,7 +47,14 @@ public:
     int _newCCPower;
     int ControllerMode; 
 
+    bool _hasStalled;
+    int NReadBytes;
+
     std::string SQLStatusMsg;
+    std::ofstream LogFile;
+    time_t rawtime;
+    void DbgWrite(std::string );
+
 
 };
 
