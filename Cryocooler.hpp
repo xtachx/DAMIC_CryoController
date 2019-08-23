@@ -10,7 +10,7 @@
 #define Cryocooler_HPP_INCLUDED
 
 /*Defines*/
-#define DebugMode 1
+#define DebugMode 0
 
 /*Includes*/
 #include <iostream>
@@ -26,10 +26,10 @@ public:
     ~Cryocooler();
 
     int GetTC(void);
-    void GetP(void);
-    void GetE(void);
-    void GetPIDState(void);
-    void checkIfON(void);
+    int GetP(void);
+    int GetE(void);
+    int GetPIDState(void);
+    int checkIfON(void);
 
     void PowerOnOff(bool );
 
