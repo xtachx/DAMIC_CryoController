@@ -20,7 +20,7 @@
 
 
 #define RateMovingAvgN 20
-#define DeltaTRatePerMin 3.0
+#define DeltaTRatePerMin 1.0
 #define CryoCoolerMaxPowerDelta 20
 
 

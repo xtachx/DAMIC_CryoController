@@ -63,7 +63,6 @@ Cryocooler::Cryocooler(std::string port):SerialDevice(port){
     this->LogFile.open("CryocoolerLog.txt", std::ios::out|std::ios::ate|std::ios::app);
 
     this->_hasStalled=false;
-
 }
 
 
@@ -116,7 +115,7 @@ int Cryocooler::GetTC(void)
 
 
     try {
-        this->TC = std::stof(CCTC_String);
+        this->TC = std::stof(CCTC_String);    
         } catch (...){
         std::cout<<"\nException in GetTC block\n\n";
         this->DbgWrite("Exception in GetTC block");

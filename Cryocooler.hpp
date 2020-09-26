@@ -55,7 +55,6 @@ public:
     time_t rawtime;
     void DbgWrite(std::string );
 
-
 };
 
 #endif
