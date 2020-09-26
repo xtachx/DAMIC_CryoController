@@ -28,58 +28,69 @@ int main( int argc, char** argv )
 
     int numRefreshes = 0;
     int Status, NReadBytes;
+    int KeepRunning=1;
+
 
     Cryocooler *SunPowerCC = new Cryocooler("/dev/SunPowerCC");
     sleep(1);
 
     
 
-    while (true){
+    do {
 
-        Status = SunPowerCC->GetTC();
-            if (Status!=0) continue;
+        if (Status == 0) {
+
+            Status = SunPowerCC->GetTC();
+            if (Status != 0) continue;
+
+            Status = SunPowerCC->GetP();
+            if (Status != 0) continue;
+
+            Status = SunPowerCC->GetE();
+            if (Status != 0) continue;
+
+            Status = SunPowerCC->checkIfON();
+            if (Status != 0) continue;
+
+            SunPowerCC->UpdateMysql();
 
 
-        SunPowerCC->GetP();
-        SunPowerCC->GetE();
-        SunPowerCC->checkIfON();
+            /*Refresh the cryocooler power level*/
+            if (numRefreshes++ % 5 == 0) {
+                SunPowerCC->AdjustCryoPower();
+                SunPowerCC->GetPIDState();
+            }
 
+            /*Change controller mode in case of failure*/
+            if (SunPowerCC->ControllerMode != 0 && numRefreshes % 30 == 0) SunPowerCC->SetCryoMode();
 
-        SunPowerCC->UpdateMysql();
+            /*We can do the On/off check every minute so as to not fry the cryocooler by turning it on and off too fast*/
+            if (SunPowerCC->_newCCPowerState != SunPowerCC->isON && numRefreshes % 30 == 0) {
+                SunPowerCC->PowerOnOff(SunPowerCC->_newCCPowerState);
+                if (SunPowerCC->isON) SunPowerCC->AdjustCryoPower();
+            }
 
+            fflush(stdout);
+            printf("\rSunpower CC | TC: %.02f,  PMax: %.02f,  PMin: %.02f,  PCur (Set/Ask): %.02f (%.2f / %.02f),  isON: %d Mode: %d SQL: %s",
+                   SunPowerCC->TC, SunPowerCC->PMax, SunPowerCC->PMin, SunPowerCC->PCurrent, SunPowerCC->PSet,
+                   SunPowerCC->PAsk, SunPowerCC->isON, SunPowerCC->ControllerMode, SunPowerCC->SQLStatusMsg.c_str());
+            advance_cursor();
 
-        /*Refresh the cryocooler power level*/
-        if (numRefreshes++%5==0){
-            SunPowerCC->AdjustCryoPower();
-            SunPowerCC->GetPIDState();
-            //numRefreshes=0;
+            sleep(1);
+
+        } else {
+
+            printf("\nThe cryocooler has either stalled or crashed. Resetting the cryocooler communications.\n");
+            /*Delete the object. This will reset the serial link.*/
+            delete SunPowerCC;
+            /*Recreate the serial link.*/
+            SunPowerCC = new Cryocooler("/dev/SunPowerCC");
+
+            /*TODO: Increment the hiccup count / take action based on how many hiccups we get*/
+            //KeepRunning++;
         }
-        
-        /*Change controller mode in case of failure*/
-        if (SunPowerCC->ControllerMode != 0 && numRefreshes%30==0) SunPowerCC->SetCryoMode();
+    } while (KeepRunning==1);
 
-        /*We can do the On/off check every minute so as to not fry the cryocooler by turning it on and off too fast*/
-        if (SunPowerCC->_newCCPowerState!=SunPowerCC->isON && numRefreshes%30==0){
-            SunPowerCC->PowerOnOff(SunPowerCC->_newCCPowerState);
-	    if (SunPowerCC->isON) SunPowerCC->AdjustCryoPower();
-        }
-        //printf("NR %d\n",numRefreshes);
-
-        fflush(stdout);
-        printf ("\rSunpower CC | TC: %.02f,  PMax: %.02f,  PMin: %.02f,  PCur (Set/Ask): %.02f (%.2f / %.02f),  isON: %d Mode: %d SQL: %s",
-                        SunPowerCC->TC,SunPowerCC->PMax,SunPowerCC->PMin,SunPowerCC->PCurrent, SunPowerCC->PSet, SunPowerCC->PAsk,SunPowerCC->isON,SunPowerCC->ControllerMode, SunPowerCC->SQLStatusMsg.c_str());
-	advance_cursor();
-
-        sleep(1);
-    }
-    printf ("\n");
-
-
-
-
-
-    //CryoCooler->WriteString("TC\r");
-    //CryoCooler->WriteString("tc\r");
 
     delete SunPowerCC;
 

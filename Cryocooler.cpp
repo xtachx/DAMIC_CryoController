@@ -98,13 +98,9 @@ int Cryocooler::GetTC(void)
     this->DbgWrite("Written TC to device.");
 
     //Read first line
-    int NBytesRead;
-    bool status;
     CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
-    if (this->_hasStalled!=0){
-            printf ("\nCryocooler stalled\n\n");
-            return -1;
-        }
+    if (this->_hasStalled!=0) return -1;
+
     this->DbgWrite("TC response first line blank.");
 
 
@@ -126,26 +122,26 @@ int Cryocooler::GetTC(void)
 }
 
 
-void Cryocooler::GetP(void){
+int Cryocooler::GetP(void){
 
     std::string CC_String, CC_Firstline;
     std::string CCCMd = "P\r";
 
     this->WriteString(CCCMd);
-
-    //this->DbgWrite("Written P to device.");
+    this->DbgWrite("Written P to device.");
 
 
     //Read first line
-    CC_Firstline = this->ReadLine();
+    CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
+    if (this->_hasStalled!=0) return -1;
 
-    //this->DbgWrite("Response first line - for P.");
+    this->DbgWrite("Response first line - for P.");
 
 
     //TC is in second line
     CC_String = this->ReadLine();
 
-    //this->DbgWrite(" P response - Second line.");
+    this->DbgWrite(" P response - Second line.");
 
 
     try{
@@ -153,12 +149,15 @@ void Cryocooler::GetP(void){
     } catch (...){
         std::cout<<"\nException in GetP block\n\n";
         this->DbgWrite("Exception in GetP block");
+        return -2;
     }
+
+    return 0;
 
 }
 
 
-void Cryocooler::GetPIDState(void){
+int Cryocooler::GetPIDState(void){
 
     std::string CC_String, CC_Firstline;
     std::string CCCMd = "SET PID\r";
@@ -169,7 +168,8 @@ void Cryocooler::GetPIDState(void){
 
 
     //Read first line
-    CC_Firstline = this->ReadLine();
+    CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
+    if (this->_hasStalled!=0) return -1;
     //this->DbgWrite("PID Response first line.");
 
     //TC is in second line
@@ -183,13 +183,16 @@ void Cryocooler::GetPIDState(void){
     } catch (...){
         std::cout<<"\nException in GetPIDState block\n\n";
         this->DbgWrite("Exception in GetPIDState block.");
+        return -2;
     }
+
+    return 0;
 
 }
 
 
 
-void Cryocooler::GetE(void){
+int Cryocooler::GetE(void){
 
     std::string CC_S1, CC_S2, CC_S3, CC_Firstline;
     std::string CCCMd = "E\r";
@@ -200,7 +203,8 @@ void Cryocooler::GetE(void){
 
 
     //Read first line
-    CC_Firstline = this->ReadLine();
+    CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
+    if (this->_hasStalled!=0) return -1;
     //this->DbgWrite(" E response first line.");
 
 
@@ -221,10 +225,14 @@ void Cryocooler::GetE(void){
     } catch (...){
         std::cout<<"\nException in GetE block\n\n";
         this->DbgWrite("Exception in Get E block");
+        return -2;
     }
+
+    return 0;
+
 }
 
-void Cryocooler::checkIfON(void){
+int Cryocooler::checkIfON(void){
 
     std::string CC_String, CC_Firstline;
     std::string CCCMd = "SET SSTOP\r";
@@ -232,7 +240,8 @@ void Cryocooler::checkIfON(void){
     this->WriteString(CCCMd);
     //this->DbgWrite("Written SSTOP to check if ON.");
     //Read first line
-    CC_Firstline = this->ReadLine();
+    CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
+    if (this->_hasStalled!=0) return -1;
     //this->DbgWrite("checkIfOn first line.");
     //TC is in second line
     CC_String = this->ReadLine();
@@ -241,6 +250,8 @@ void Cryocooler::checkIfON(void){
 
     if (sstop_status == 1) this->isON = false;
     else this->isON = true;
+
+    return 0;
 
 }
 
@@ -350,7 +361,8 @@ void Cryocooler::SetCryoMode(void){
     this->WriteString(CCCMd);
     //this->DbgWrite("SetCryoMode written");
     //Read first line
-    CC_Firstline = this->ReadLine();
+    CCTC_Firstline = this->RReadLine(this->NReadBytes, this->_hasStalled);
+    if (this->_hasStalled!=0) return -1;
     //this->DbgWrite("SetCryoMode first line");
     //TC is in second line
     CC_String = this->ReadLine();
@@ -360,9 +372,12 @@ void Cryocooler::SetCryoMode(void){
         this->ControllerMode = std::stod(CC_String);
     } catch (...){
         std::cout<<"\nException in SetCryoMode block\n\n";
+        return -2;
     }
 
     std::cout<<"Cryocooler mode was set to 0 (power control)\n";
+
+    return 0;
 
 }
 
