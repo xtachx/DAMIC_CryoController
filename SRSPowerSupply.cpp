@@ -82,9 +82,9 @@ SRSPowerSupply::GetParameterFromSRS(std::string SRSCmd){
             ret = std::stod(srsReturn);
         else if (std::is_same<T, bool>)
             ret = srsReturn=="1";
-        else 
+        else
             ret = srsReturn;
-        
+
     } catch(...){
         printf("Error in ReadSRSOutput\n");
     }
@@ -94,11 +94,11 @@ SRSPowerSupply::GetParameterFromSRS(std::string SRSCmd){
 }
 
 float SRSPowerSupply::ReadPSVoltage(){
-    this->currentVoltage = this->GetParameterFromSRS<float>("VOLT?\n");
+    return this->GetParameterFromSRS<float>("VOLT?\n");
 }
 
 bool SRSPowerSupply::ReadPSOutput(){
-     this->currentOutputStatus = this->GetParameterFromSRS<int>("SOUT?\n");;
+     return this->GetParameterFromSRS<int>("SOUT?\n");;
 }
 
 str::string SRSPowerSupply::IDN(){
@@ -106,7 +106,7 @@ str::string SRSPowerSupply::IDN(){
 }
 
 bool SRSPowerSupply::IsOVLD(){
-    this->OVLDStatus = this->GetParameterFromSRS<std::string>("OVLD??\n");
+    return this->GetParameterFromSRS<std::string>("OVLD??\n");
 }
 
 void SRSPowerSupply::WritePSVoltage(float voltage){
@@ -128,7 +128,7 @@ void SRSPowerSupply::WritePSOutput(bool output){
 }
 
 
-void SRSPowerSupply::VoltageRamp(double startScanVoltage, double stopScanVoltage, double scanTime, bool display){
+void SRSPowerSupply::VoltageRamp(float startScanVoltage, float stopScanVoltage, float scanTime, bool display){
 
 	// Define ramp parmaeters
 	std::string srsCmd;
@@ -137,7 +137,7 @@ void SRSPowerSupply::VoltageRamp(double startScanVoltage, double stopScanVoltage
 
     // Ramp start voltage
     srsCmd = "SCAB " + std::to_string(startScanVoltage) + "\n";
-    this->WriteString(srsCmd); 
+    this->WriteString(srsCmd);
 
     // Ramp stop voltage
     srsCmd = "SCAE " + std::to_string(stopScanVoltage) + "\n";
@@ -197,6 +197,22 @@ void SRSPowerSupply::UpdateMysql(void){
 
 
     DDroneSession.close();
+
+}
+
+
+//Perform a sweep of parameters ever couple of seconds (to be determined)
+void SRSPowerSupply::PerformSweep(void){
+
+    //Read PS voltage
+    this->currentVoltage = this->ReadPSVoltage();
+    //read PS output
+    this->currentOutputStatus = this->ReadPSOutput();
+    //read OVLD
+    this->OVLDStatus = this->IsOVLD();
+
+    std::cout<<"PS Status | Volt: "<<this->currentVoltage<<" Output: "<<this->currentOutputStatus<<" OVLD: "<<this->OVLDStatus<<"\n";
+
 
 }
 

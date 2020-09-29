@@ -1,6 +1,6 @@
 /* **************************************************************************************
  * Code containing the Routines required to communicate and operate the SRS Power Supply
- * Module. 
+ * Module.
  *
  * by Pitam Mitra 2020 for DAMIC-M
  * **************************************************************************************/
@@ -38,8 +38,11 @@ public:
 	void WritePSOutput(bool output);
 
     //Ramp gen
-	void VoltageRamp(double startScanVoltage, double stopScanVoltage, double scanTime, bool display);
+	void VoltageRamp(float startScanVoltage, float stopScanVoltage, float scanTime, bool display);
 
+	//Updates
+	void PerformSweep(void);
+	void UpdateMysql(void);
 
 private:
 
