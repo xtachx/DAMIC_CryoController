@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 project( DAMICMCryoCtrl )
 
 set (CMAKE_CXX_FLAGS "-Wno-write-strings -std=gnu++1y -I/usr/include/mysql-cppconn-8 -O3 -march=native -m64")
-set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -lmysqlcppconn8 -lm")
+set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -lmysqlcppconn8 -lm -lpthread")
+#set (CMAKE_EXE_LINKER_FLAGS "-Wno-write-strings -lm -lpthread")
 
 
 set(SOURCECC
@@ -41,6 +42,17 @@ set(HEADERSSM
 )
 
 
+
+set(SOURCESRS
+   ${CMAKE_CURRENT_SOURCE_DIR}/SRSPowerSupply.cpp
+)
+set(HEADERSSRS
+   ${CMAKE_CURRENT_SOURCE_DIR}/SRSPowerSupply.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/MysqlCredentials.hpp
+)
+
+
+
 add_executable( CCDrone CCDroneStart.cpp )
 target_link_libraries( CCDrone ${SOURCECC} ${HEADERSCC})
 
@@ -50,3 +62,15 @@ target_link_libraries( LSHDrone ${SOURCELSH} ${HEADERSLSH})
 add_executable( StartSM StartSM.cpp )
 target_link_libraries( StartSM ${SOURCESM} ${HEADERSSM})
 
+# ------------------------------- #
+
+find_library(rpclib rpc ${CMAKE_CURRENT_SOURCE_DIR}/rpclib/ REQUIRED)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/rpclib/)
+
+add_executable(SRSSrv SRSServer.cpp)
+target_link_libraries(SRSSrv ${rpclib} ${SOURCESRS} ${HEADERSSRS})
+set_property(TARGET SRSSrv PROPERTY CXX_STANDARD 14)
+
+add_executable(SRSClient SRSClient.cpp)
+target_link_libraries(SRSClient ${rpclib})
+set_property(TARGET SRSClient PROPERTY CXX_STANDARD 14)
