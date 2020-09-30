@@ -45,10 +45,14 @@ set(HEADERSSM
 
 set(SOURCESRS
    ${CMAKE_CURRENT_SOURCE_DIR}/SRSPowerSupply.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/UtilityFunctions.cpp
 )
 set(HEADERSSRS
-   ${CMAKE_CURRENT_SOURCE_DIR}/SRSPowerSupply.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/SRSPowerSupply.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/MysqlCredentials.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/SerialDeviceT.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/UtilityFunctions.hpp
 )
 
 

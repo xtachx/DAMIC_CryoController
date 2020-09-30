@@ -18,7 +18,6 @@ class SRSPowerSupply : public SerialDevice {
 public:
     SRSPowerSupply(std::string );
     ~SRSPowerSupply();
-    void UpdateMysql(void);
 
     /*SRS Related Routines*/
 
@@ -28,13 +27,13 @@ public:
     //Set Parameters
 
     // Get PS Values
-	double ReadPSVoltage();
+	float ReadPSVoltage();
 	bool ReadPSOutput();
     std::string IDN();
     bool IsOVLD(void);
 
 	// Set PS Values
-	void WritePSVoltage(double voltage);
+	void WritePSVoltage(float voltage);
 	void WritePSOutput(bool output);
 
     //Ramp gen
@@ -43,6 +42,8 @@ public:
 	//Updates
 	void PerformSweep(void);
 	void UpdateMysql(void);
+
+
 
 private:
 
