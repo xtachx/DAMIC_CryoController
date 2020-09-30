@@ -24,7 +24,7 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     
     /*First lets get the control parameters*/
     mysqlx::Table CtrlTable = DDb.getTable("ControlParameters");
-    mysqlx::RowResult ControlResult = CtrlTable.select("TTemperature", "Kp", "Ki", "Kd", "KpR","KiR", "KdR", "CCPowerState","WatchdogFuse")
+    mysqlx::RowResult ControlResult = CtrlTable.select("TTemperature", "Kp", "Ki", "Kd", "KpR","KiR", "KdR", "CCPowerState","WatchdogFuse","SRSPowerState")
     .bind("IDX", 1).execute();
     /*The row with the result*/
     mysqlx::Row CtrlRow = ControlResult.fetchOne();
@@ -38,6 +38,7 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
     _thisInteractionData.kdR = CtrlRow[6];
     _thisInteractionData.CCPowerStateLast = CtrlRow[7];
     _thisInteractionData.WatchdogFuse = CtrlRow[8];
+    _thisInteractionData.SRSPowerState = CtrlRow[9];
     
     /*Next - the current TC*/
     mysqlx::Table TCTable = DDb.getTable("CCState");
@@ -97,6 +98,17 @@ void CryoControlSM::UpdateVars(DataPacket &_thisInteractionData ){
         
         //Debug
         printf("Cryocooler switch %d\n",this->CCoolerPower);
+        
+    }
+
+
+    //Update the SRSPowerState if needed;
+    if (_thisInteractionData.SRSPowerState != this->ComputedSRSPowerState){
+        SCResult= SendControl.update().set("SRSPowerState",this->ComputedSRSPowerState).where("IDX=1").execute();
+        warnings+=SCResult.getWarningsCount();
+        
+        //Debug
+        printf("SRS Power state switched %d\n",this->CCoolerPower);
         
     }
 

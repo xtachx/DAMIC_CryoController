@@ -45,6 +45,7 @@ struct DataPacket{
 
     bool CCPowerStateLast;
     bool WatchdogFuse;
+    bool SRSPowerState;
 
 
     time_t LastCCTime;
@@ -89,6 +90,8 @@ private:
     time_t LastCCTime;
     time_t LastLSHTime;
     time_t NowTime;
+
+    bool ComputedSRSPowerState=0;
 
 
 

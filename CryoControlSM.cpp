@@ -250,6 +250,9 @@ void CryoControlSM::Warmup(void){
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
 
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=0;
+
         /*Guard done*/
         this->EntryGuardActive = false;
     }
@@ -280,6 +283,9 @@ void CryoControlSM::Idle(void){
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
 
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=0;
+
         this->EntryGuardActive = false;
     }
 
@@ -305,6 +311,9 @@ void CryoControlSM::Fault(void){
 
         /*Turn cryocooler off*/
         this->CCoolerPower=0;
+
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=0;
 
         this->EntryGuardActive = false;
     }
@@ -345,6 +354,9 @@ void CryoControlSM::CoolDownHot(void ){
         /*Turn cryocooler on*/
         this->CCoolerPower=1;
 
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=0;
+
 
         this->EntryGuardActive = false;
     }
@@ -380,6 +392,9 @@ void CryoControlSM::CoolDownCold(void){
         /*Turn cryocooler on*/
         this->CCoolerPower=1;
 
+        /*Turn SRS ON*/
+        this->ComputedSRSPowerState=1;
+
 
         this->EntryGuardActive = false;
     }
@@ -408,6 +423,9 @@ void CryoControlSM::MaintainWarm(void){
 
         /*Ensure cryocooler is off*/
         this->CCoolerPower=0;
+
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=0;
 
         this->EntryGuardActive = false;
     }
@@ -439,6 +457,9 @@ void CryoControlSM::MaintainCold(void){
 
         /*Ensure cryocooler is on*/
         this->CCoolerPower=1;
+
+        /*Turn SRS off*/
+        this->ComputedSRSPowerState=1;
 
         this->EntryGuardActive = false;
     }
