@@ -75,6 +75,3 @@ add_executable(SRSSrv SRSServer.cpp)
 target_link_libraries(SRSSrv ${rpclib} ${SOURCESRS} ${HEADERSSRS})
 set_property(TARGET SRSSrv PROPERTY CXX_STANDARD 14)
 
-add_executable(SRSClient SRSClient.cpp)
-target_link_libraries(SRSClient ${rpclib})
-set_property(TARGET SRSClient PROPERTY CXX_STANDARD 14)
