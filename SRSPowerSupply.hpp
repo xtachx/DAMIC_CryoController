@@ -43,6 +43,9 @@ public:
 	void PerformSweep(void);
 	void UpdateMysql(void);
 
+    //Read memory
+    float ReadMemPSVoltage() const {return currentVoltage; }
+
 
 
 private:

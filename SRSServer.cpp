@@ -39,6 +39,7 @@ int main()
     /*Bind the server codes to RPC*/
     srv.bind("VoltageRamp", [&SRS1](float startScanV, float stopScanV, float scanT, bool display){ SRS1.VoltageRamp(startScanV,stopScanV,scanT,display); } );
     srv.bind("PerformSweep", [&SRS1](){ SRS1.PerformSweep(); } );
+    srv.bind("ReadMemVoltage", [&SRS1](){ return SRS1.ReadMemPSVoltage(); } );
 
 
     srv.run();
