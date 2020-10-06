@@ -147,7 +147,8 @@ void SRSPowerSupply::WritePSOutput(bool output){
 
 void SRSPowerSupply::VoltageRamp(float startScanVoltage, float stopScanVoltage, float scanTime, bool display){
 
-    if (!this->SRSPowerState){
+
+    if (this->SRSPowerState){
         mtx.lock();
         // Define ramp parmaeters
         std::string srsCmd;
