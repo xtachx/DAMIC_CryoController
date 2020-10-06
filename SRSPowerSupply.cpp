@@ -69,6 +69,7 @@ SRSPowerSupply::~SRSPowerSupply(){
 }
 
 
+
 /*Remember - The imp,ementations need to be made at the very end
  *for this split template funtion!*/
 
@@ -78,20 +79,16 @@ SRSPowerSupply::~SRSPowerSupply(){
 template <>
 std::string SRSPowerSupply::GetParameterFromSRS<std::string>(std::string SRSCmd){
 
-    mtx.lock();
 	this->WriteString(SRSCmd);
     std::string srsReturn = this->ReadLine();
-    mtx.unlock();
     return srsReturn;
 }
 
 template <typename T>
 T SRSPowerSupply::GetParameterFromSRS(std::string SRSCmd){
 
-    mtx.lock();
 	this->WriteString(SRSCmd);
 	std::string srsReturn = this->ReadLine();
-    mtx.unlock();
 
 
     T ret;
@@ -135,9 +132,7 @@ void SRSPowerSupply::WritePSVoltage(float voltage){
 	std::string srsCmd = "VOLT " + std::to_string(voltage) +"\n";
 
 	// Write to power supply
-    mtx.lock();
 	this->WriteString(srsCmd);
-    mtx.unlock();
 	currentVoltage = this->ReadPSVoltage();
 }
 
@@ -145,9 +140,7 @@ void SRSPowerSupply::WritePSOutput(bool output){
 	std::string srsCmd = "SOUT " + std::to_string(output) + "\n";
 
 	// Write to power supply
-    mtx.lock();
 	this->WriteString(srsCmd);
-    mtx.unlock();
 	currentOutputStatus = this->ReadPSOutput();
 }
 
@@ -161,20 +154,25 @@ void SRSPowerSupply::VoltageRamp(float startScanVoltage, float stopScanVoltage, 
         srsCmd = "SCAR RANGE" + std::to_string(100) + "\n";
         this->WriteString(srsCmd);
 
+
         // Ramp start voltage
         srsCmd = "SCAB " + std::to_string(startScanVoltage) + "\n";
         this->WriteString(srsCmd);
+
 
         // Ramp stop voltage
         srsCmd = "SCAE " + std::to_string(stopScanVoltage) + "\n";
         this->WriteString(srsCmd);
 
+
         // Ramp time
         srsCmd = "SCAT " + std::to_string(scanTime) + "\n";
         this->WriteString(srsCmd);
 
+
         // Other options necessary for ramp
         this->WritePSOutput(true);
+
         srsCmd = "SCAD ON\n";
         this->WriteString(srsCmd);
         srsCmd = "SCAA 1\n";
@@ -183,6 +181,7 @@ void SRSPowerSupply::VoltageRamp(float startScanVoltage, float stopScanVoltage, 
         this->WriteString(srsCmd);
 
         mtx.unlock();
+        
     }
 
 }
@@ -236,12 +235,16 @@ void SRSPowerSupply::PerformSweep(void){
     /*Store the present condition of the PS state*/
     bool _prevPS = this->SRSPowerState;
 
+    mtx.lock();
+
     //Read PS voltage
     this->currentVoltage = this->ReadPSVoltage();
     //read PS output
     this->currentOutputStatus = this->ReadPSOutput();
     //read OVLD
     this->OVLDStatus = this->IsOVLD();
+
+    mtx.unlock();
 
     /*Updates via SQL*/
     this->UpdateMysql();
